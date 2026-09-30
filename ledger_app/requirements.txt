@@ -1,0 +1,12 @@
+
+reflex[db]==0.9.10.post1
+# 0.0.47 rejects naive datetimes, which every model here stores
+sqlmodel==0.0.42
+
+# added after the initial build; a fresh venv fails without these
+geopy==2.5.0
+cryptography==50.0.1
+keyring==25.7.0
+
+# gallery thumbnails; a phone photo is 3-18 MB and the grid shows up to 100
+pillow==12.3.0

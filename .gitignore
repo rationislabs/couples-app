@@ -1,0 +1,78 @@
+# --- secrets -----------------------------------------------------------------
+# The only copy of the API keys. Committing this once means rotating every key,
+# because git keeps it in history even after you delete the file.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- the data itself ---------------------------------------------------------
+# ledger.db holds your places, the date log and the private pages. It is
+# personal data, it is binary, and it changes on every click, so every commit
+# would store a fresh copy. Back it up with ./backup_db.sh instead.
+ledger_app/ledger.db
+ledger_app/ledger.db-wal
+ledger_app/ledger.db-shm
+backups/
+
+# Alembic migrations are deliberately NOT ignored: they are the schema's
+# history and the only way to rebuild the database from nothing.
+
+# --- generated at runtime ----------------------------------------------------
+# Written by ledger_app/ledger_app/pages/dates.py on every filter change while the map is open.
+assets/places_map.html
+ledger_app/.web/public/places_map.html
+
+# Importer inputs. Ignored as a whole directory, not file by file.
+csv/
+places-inbox.txt
+
+# Photos, uploaded through the app and capped at 100. Private, and binary.
+# Backed up nightly by backup_db.sh instead.
+gallery/
+
+# The lists and API caches. Personal viewing data, and the caches are
+# regenerable API responses.
+json/
+ledger_app/reflex.log
+job_log*
+
+# --- bulk sources, far too large for a repo ----------------------------------
+takeout/
+pdfs/
+*.zip
+
+# --- build and environment ---------------------------------------------------
+ledger_app/.venv/
+# Build artefact of `uv pip install -e .` (ledger_app/pyproject.toml).
+*.egg-info/
+ledger_app/.web/
+ledger_app/.states/
+.states/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+node_modules/
+
+# --- editor and OS -----------------------------------------------------------
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+.DS_Store
+
+# --- AI tooling: never commit ------------------------------------------------
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.mcp.json
+.serena/
+.superpowers/
+docs/superpowers/
+graphify-out/
+.caveman*
+.headroom/
+.worktrees/

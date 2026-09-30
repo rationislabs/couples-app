@@ -1,0 +1,14 @@
+# Makes `import ledger_app` resolve from any working directory, so the scripts
+# and tests do not each need sys.path.insert(). Installed editable into .venv:
+#   VIRTUAL_ENV=$PWD/.venv uv pip install -e .
+[project]
+name = "ledger-app"
+version = "0"
+requires-python = ">=3.12"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["ledger_app"]

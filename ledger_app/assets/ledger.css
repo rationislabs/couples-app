@@ -1,0 +1,779 @@
+/* Ledger — visual system.
+   Palette recovered from the retired static ledger (backups/static-ledger-*):
+   navy ink, bone text, and three accents that carry data rather than decorate. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,400&display=swap');
+
+:root {
+  --ink:    #0A1626;
+  --plate:  #12213A;
+  --plate2: #1E3050;
+  --rule:   #2C456B;
+  --ink2:   #0D1A2C;                /* Radix --gray-2 */
+  --edge:   #35507A;                /* Radix --gray-6 */
+  --bone:   #E8EDF5;
+  --steel:  #B9C6D8;
+  --dim:    #7C8CA8;
+  --mustard:   #F2A93B;
+  --vermilion: #E2503F;
+  --teal:      #3FB6A8;
+
+  /* Bringhurst-style fourth, 16px base */
+  --t0: 1rem; --t1: 1.313rem; --t2: 1.75rem; --t3: 2.375rem; --t4: 3.188rem;
+
+  /* Elevation. Shadow means state, not decoration: a surface that never
+     changes state never gets one. On a #0A1626 page a shadow has to be darker
+     than the background and carry a 1px light edge, or it reads as blur
+     rather than height.
+       e1  interactive surface, on hover/focus, with --lift
+       e2  genuinely floating: popover, hover card, toast, detached tab strip
+       e3  modal dialog and drawer only */
+  --e1: 0 1px 0 rgba(232,237,245,.04), 0 2px 6px rgba(4,9,18,.45);
+  --e2: 0 1px 0 rgba(232,237,245,.06), 0 8px 24px rgba(4,9,18,.55);
+  --e3: 0 1px 0 rgba(232,237,245,.08), 0 18px 48px rgba(4,9,18,.65);
+  --lift: translateY(-1px);
+  --dur-1: 90ms;    /* hover */
+  --dur-2: 160ms;   /* open and close */
+  --ease: cubic-bezier(.2,.6,.3,1);
+
+  /* Names for three values the file was already repeating by hand. */
+  --plate3: #27395C;                /* hover fill */
+  --rule-2: color-mix(in srgb, var(--rule) 45%, transparent);  /* hairline */
+  --good:   #5FBE8C;
+  /* The only green in the palette, and the only thing it is allowed to mean is
+     done: visited, tried, watered, cooked, read. Six pages had that concept and
+     no colour for it. */
+}
+
+/* Radix runs the components; point its dark scale at the palette instead of
+   fighting it downstream. */
+.radix-themes, :root {
+  --color-background: var(--ink);
+  --color-panel-solid: var(--plate);
+  --gray-1: var(--ink);    --gray-2: var(--ink2); --gray-3: var(--plate);
+  --gray-4: var(--plate2); --gray-5: var(--rule); --gray-6: var(--edge);
+  --gray-11: var(--dim);   --gray-12: var(--bone);
+  --accent-9: var(--mustard); --accent-10: #FFC15E; --accent-11: var(--mustard);
+  --accent-8: var(--rule);
+  --default-font-family: 'Archivo', system-ui, sans-serif;
+  --heading-font-family: 'Archivo Narrow', 'Archivo', system-ui, sans-serif;
+}
+
+body {
+  background: var(--ink); color: var(--bone);
+  /* .nav is full-bleed with width: 100vw, and 100vw counts the vertical
+     scrollbar — on any page long enough to scroll, the bar is ~15px wider than
+     the viewport and the page grew a horizontal scrollbar. clip, not hidden:
+     hidden makes body a scroll container, which kills position: sticky on both
+     the navbar and the table headers. */
+  overflow-x: clip;
+}
+
+/* Numbers in a ledger have to line up. */
+.tnum { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+
+/* Prose: the only place a serif appears, at a measure you can actually read. */
+.prose {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: var(--t0); line-height: 1.65; max-width: 62ch; color: var(--steel);
+}
+
+/* The navigation bar.
+
+   Everything here used to be an inline style dict in ui.navbar, which is why
+   no page tint and no stylesheet could reach it. Only the active tab's
+   background is still inline: it is the room's signature hue, it varies per
+   page, and inline is the one thing that reliably beats Radix.
+
+   Sticky because nine tabs you have to scroll up to reach are a list, not a
+   bar. It sits on --ink rather than --plate so it reads as the frame around
+   the page instead of another card on it. */
+.nav {
+  position: sticky; top: 0; z-index: 40;
+  /* A solid bar, not a translucent one. --plate2 is a step above the page in
+     the same rotated ramp, so it reads as the frame and still belongs to
+     whichever room you are in. */
+  background: var(--plate2);
+  border-bottom: 1px solid var(--rule);
+  /* Full width of the *window*, not of the container.
+     
+     Cancelling the gutter only reached the container's own edges, and the
+     container is capped at 1440px, so on a wide screen the bar stopped short.
+     `margin-inline: calc(50% - 50vw)` breaks a centred block out to the
+     viewport edges whatever its parent is capped at. Its content keeps the
+     page gutter so the tabs still line up with what is under them. */
+  margin-inline: calc(50% - 50vw);
+  /* The width has to be stated too. A negative margin moves an edge; it does
+     not stretch a box, so with width:100% the bar reached the left and stopped
+     1440px later. box-sizing is border-box globally, so the padding below sits
+     inside this. */
+  width: 100vw;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  padding: 0.95rem max(var(--gutter), calc(50vw - 720px + var(--gutter)));
+  box-shadow: var(--e1);
+}
+/* display is a Reflex prop in ui.navbar: flex from 62em, a menu below it. */
+.nav-tabs { gap: 0.25rem; align-items: center; min-width: 0; }
+.nav-mark {
+  width: 0.7rem; height: 1.6rem; border-radius: 1px;
+  background: var(--signature, var(--mustard));
+  transition: background var(--dur-2) var(--ease);
+}
+.nav-brand {
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700;
+  font-size: 1.25rem; color: var(--bone); letter-spacing: 0.01em;
+}
+.nav-tab {
+  padding: 0.5rem 0.95rem; border-radius: 2px; font-size: 0.95rem;
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700;
+  letter-spacing: 0.01em; color: var(--dim);
+  transition: color var(--dur-1) var(--ease),
+              background var(--dur-1) var(--ease);
+}
+.nav-tab:hover { color: var(--bone); background: var(--plate3); }
+/* Today's emoji, ui.daily_emoji. Never shrinks: on a phone the tab strip
+   scrolls instead. */
+.nav-emoji { flex: 0 0 auto; white-space: nowrap; font-size: 1.1rem; letter-spacing: 0.1em; }
+.nav-tab.on { color: var(--ink); }
+.nav-tab.on:hover { color: var(--ink); }
+
+/* The phone page menu, ui.navbar. It is portalled to <body>, outside the page's
+   room, so each entry takes its own room class and wears that room's signature
+   as its edge. --scaling is reset because the room classes also set it. */
+.nav-menu .nav-menu-item {
+  --scaling: 1;
+  min-height: 2.6rem; padding-inline: 0.8rem; border-radius: 2px;
+  border-left: 4px solid var(--signature, var(--mustard));
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700; font-size: 1.05rem;
+  color: var(--bone);
+}
+.nav-menu .nav-menu-item.on { background: var(--signature, var(--mustard)); color: var(--ink); }
+
+/* The one loud element per page. */
+.hero {
+  background: var(--plate); border-left: 6px solid var(--signature, var(--mustard));
+  border-radius: 3px; padding: 1.25rem 1.5rem;
+}
+.hero-title {
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700;
+  font-size: var(--t3); line-height: 1.05; letter-spacing: -0.01em;
+  color: var(--bone); margin: 0;
+}
+
+/* A block, not a card: no shadow, no uniform radius, weight by role. */
+.block { background: var(--plate); border-radius: 3px; padding: 0.9rem 1rem; }
+/* The Tonight cards. Same plate as .block; the left border is the card's
+   kind and stays inline in home.py because it varies per card. */
+.tonight-card {
+  background: var(--plate); border: 1px solid var(--rule);
+  border-radius: 3px; padding: 1.1rem 1.25rem;
+}
+.mood-chip { border-radius: 2px; }
+.block-head {
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700;
+  font-size: var(--t1); color: var(--bone); letter-spacing: -0.005em;
+}
+
+/* Country reads as colour before it reads as text. */
+.hue { width: 3px; align-self: stretch; border-radius: 2px; flex: 0 0 3px; }
+
+.row-place { padding: 0.28rem 0; border-top: 1px solid var(--rule-2); }
+.row-place:first-of-type { border-top: 0; }
+
+a { color: var(--bone); text-decoration-color: var(--rule); }
+a:hover { color: var(--mustard); }
+:focus-visible { outline: 2px solid var(--signature, var(--mustard));
+                 outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  /* --lift is a transform; without this line reduced motion still jumps. */
+  *:hover, *:focus-visible { transform: none !important; }
+}
+
+/* Row actions are ghost buttons; Radix paints them with the accent, which put
+   mustard on all 66 rows and spent the accent on nothing. */
+.row-place button { color: var(--dim); font-weight: 500; }
+.row-place button:hover { color: var(--mustard); }
+
+/* Filter rows: chips breathe, rows stay distinct, nothing stacks a label above
+   its content. */
+.filter-row { display: flex; flex-wrap: wrap; gap: 0.35rem 0.4rem; align-items: center; }
+.filter-stack { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; }
+.filter-stack > * + * { border-top: 1px solid rgba(44,69,107,.35); padding-top: 0.55rem; }
+
+/* Radix paints surface/outline/ghost buttons with the accent, so seven quiet
+   actions in a row all came out mustard and the accent marked nothing. Reserve
+   it for solid buttons — the one action that is the point of the page. */
+button.rt-Button:where(.rt-variant-surface),
+button.rt-Button:where(.rt-variant-outline),
+button.rt-Button:where(.rt-variant-soft) { color: var(--steel); }
+button.rt-Button:where(.rt-variant-surface):hover,
+button.rt-Button:where(.rt-variant-outline):hover,
+button.rt-Button:where(.rt-variant-soft):hover { color: var(--bone); }
+button.rt-Button:where(.rt-variant-solid) { color: var(--ink); }
+
+/* Table spacing: the default packs cells tight enough that a wrapped genre list
+   collides with the row above. Numeric columns never wrap. */
+.rt-TableRootTable { border-collapse: separate; border-spacing: 0; }
+.rt-TableCell, .rt-TableRowHeaderCell, .rt-TableColumnHeaderCell {
+  padding: 0.45rem 0.7rem; vertical-align: top;
+}
+.rt-TableColumnHeaderCell {
+  white-space: nowrap; color: var(--steel);
+  border-bottom: 1px solid var(--rule);
+}
+.rt-TableRow { border-bottom: 1px solid rgba(44,69,107,.3); }
+.rt-TableCell.tnum, .rt-TableCell:has(.tnum) { white-space: nowrap; }
+.rt-TableRowHeaderCell { color: var(--bone); }
+
+/* Inline number inputs sat as wide as a title; keep them to their content. */
+.rt-TableCell input[type="number"] { width: 4rem; }
+
+/* Nine columns need an explicit budget. With table-layout:fixed and no
+   widths the browser starved the description to 4rem and broke words in half;
+   with table-layout:auto the max-widths were ignored altogether. Percentages of
+   a fixed layout are the only version that holds. Order follows COLUMNS in
+   ledger_app.py. */
+.lib-table table { table-layout: fixed; width: 100%; }
+/* Column widths are a Reflex prop on each header cell now (COLUMNS in
+   ledger_app.py): auto below 62em, fixed above. They were ten nth-child
+   rules here that had to be renumbered whenever a column was added. */
+.lib-table td { overflow-wrap: break-word; }
+/* the description, clamped to three lines — a class, not td:nth-child(10) */
+.lib-desc {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lib-table th { white-space: normal; }
+
+/* Same negative-margin trap for any ghost button used as a chip or inline
+   action inside a row that relies on gap. */
+/* Radix's own rule is two classes (.rt-BaseButton.rt-variant-ghost), so a
+   class+type selector loses to it. Match its specificity, not !important. */
+.filter-row button.rt-Button, .row-place button.rt-Button { margin: 0; }
+.filter-row { row-gap: 0.4rem; }
+
+/* Inline edit inputs must not widen their column past its budget. */
+.rt-TableCell input, .rt-TableRowHeaderCell input { max-width: 100%; min-width: 0; }
+
+/* Country and list now hold names, not two-letter codes, so those two columns
+   need real room and the dropdowns must not spill out of them. */
+.rt-TableCell select, .rt-TableCell [role="combobox"] { max-width: 100%; }
+
+/* ---------------------------------------------------------------------------
+   Sticky table headers. A twelve-column table scrolls its own header out of
+   view, which is exactly when you need it, so the header stays put.
+   Two-class selector to beat Radix's own .rt-TableHeader rules.
+   --------------------------------------------------------------------------- */
+.rt-TableRoot .rt-TableHeader .rt-TableColumnHeaderCell,
+.rt-TableRoot thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--plate2);
+  box-shadow: inset 0 -1px 0 var(--rule);
+}
+
+/* Row feedback: the pointer should say a row is a thing, not a stripe. */
+.rt-TableRoot tbody tr {
+  transition: background 90ms ease-out;
+}
+.rt-TableRoot tbody tr:hover {
+  background: var(--plate3);
+}
+
+/* Keyboard users get the same affordance as mouse users, visibly. */
+.rt-TableRoot tbody tr:focus-within {
+  background: color-mix(in srgb, var(--plate2) 80%, transparent);
+  outline: 1px solid var(--mustard);
+  outline-offset: -1px;
+}
+.kbd-row {
+  background: color-mix(in srgb, var(--mustard) 16%, transparent) !important;
+  box-shadow: inset 3px 0 0 var(--mustard);
+}
+
+/* The shortcuts overlay, opened with ? and closed with Esc. */
+#kbd-help {
+  position: fixed; inset: 0; z-index: 60; display: none;
+  background: color-mix(in srgb, var(--ink) 82%, transparent);
+  backdrop-filter: blur(2px);
+}
+#kbd-help.on { display: grid; place-items: center; }
+#kbd-help .panel {
+  background: var(--plate); border: 1px solid var(--rule);
+  border-left: 3px solid var(--mustard);
+  padding: 1.25rem 1.5rem; min-width: 22rem;
+  font-family: Archivo, system-ui, sans-serif; color: var(--bone);
+}
+#kbd-help h3 {
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700;
+  margin: 0 0 0.75rem; font-size: 1rem;
+}
+#kbd-help dl { display: grid; grid-template-columns: 4.5rem 1fr; gap: 0.4rem 1rem; margin: 0; }
+#kbd-help dt {
+  font-family: ui-monospace, monospace; color: var(--mustard); font-size: 0.85rem;
+}
+#kbd-help dd { margin: 0; color: var(--steel); font-size: 0.85rem; }
+
+/* Respect the system setting rather than overriding it. */
+@media (prefers-reduced-motion: reduce) {
+  .rt-TableRoot tbody tr { transition: none; }
+  #kbd-help { backdrop-filter: none; }
+}
+
+/* ===========================================================================
+   Elevation in use.
+   The rule that keeps this from becoming eleven pages of floating cards:
+   a surface only casts a shadow while it is responding to you, or while it is
+   genuinely above the page. Blocks, plates and the hero stay flat.
+   =========================================================================== */
+
+/* Interactive surfaces. .lift is opt-in — put it on a card that does something
+   when you click it, and nowhere else. */
+.lift {
+  transition: box-shadow var(--dur-1) var(--ease),
+              transform var(--dur-1) var(--ease),
+              border-color var(--dur-1) var(--ease);
+}
+.lift:hover, .lift:focus-within {
+  box-shadow: var(--e1);
+  transform: var(--lift);
+}
+
+/* Table rows were already changing background on hover; give them the same
+   1px edge so the feedback matches every other interactive surface. */
+.rt-TableRoot tbody tr:hover { box-shadow: inset 0 0 0 1px var(--rule-2); }
+
+/* Things that actually float. */
+.rt-BaseDialogContent { box-shadow: var(--e3); }
+.rt-PopoverContent, .rt-HoverCardContent { box-shadow: var(--e2); }
+
+/* Done. One green, one meaning. */
+.done { color: var(--good); }
+.done-mark {
+  position: absolute; top: 0; right: 0;
+  width: 0; height: 0;
+  border-top: 1.35rem solid var(--good);
+  border-left: 1.35rem solid transparent;
+}
+
+/* ===========================================================================
+   Phone and tablet.
+   The ledger was drawn for a desk, but the device that actually opens it is a
+   small phone (375px). These three blocks are the whole responsive layer:
+   nothing here changes the desktop view. Breakpoints match Radix (sm 768,
+   md 1024) so this file and the columns={"initial","sm","lg"} props in
+   home.py agree on where the seams are.
+   =========================================================================== */
+
+/* --- phone: below 768px ---------------------------------------------------- */
+@media (max-width: 767.98px) {
+  /* 1.5rem of side padding is a fifth of the screen. */
+  .radix-themes .rt-Container { padding: 0.85rem 0.75rem 2.5rem; }
+
+  /* The tabs are a menu below 48em (ui.navbar), so the bar only holds the
+     page name, the emoji and the menu button. */
+  .nav { padding: 0.7rem var(--gutter); gap: 0.6rem; }
+
+  /* No `top: <navbar height>` for the table headers here. Every table sits in
+     an overflow-x wrapper, which makes the wrapper the header's sticky box, not
+     the page — so the offset only pushed the header down over the first row
+     and left the row showing above it. Measured on a 412px viewport. */
+
+
+  /* Every toolbar sets widths in rem for a 1400px window — 16rem of input on a
+     375px screen overflows. One rule beats them all: the width prop compiles to
+     a single emotion class, so two classes here win without !important. */
+  .radix-themes .rt-TextFieldRoot,
+  .radix-themes .rt-SelectTrigger { width: 100%; min-width: 0; }
+
+  /* Page titles at Radix 7/8 wrap to three lines. */
+  .rt-Heading.rt-r-size-8 { font-size: var(--t2); line-height: 1.1; }
+  .rt-Heading.rt-r-size-7 { font-size: var(--t1); line-height: 1.15; }
+  .hero { padding: 1rem; }
+  .hero-title { font-size: var(--t2); }
+  .block { padding: 0.75rem 0.8rem; }
+
+  /* The library's columns do not pan usefully, they just scroll forever.
+     Keep what you check on a phone — what it is, what kind, which list, and how
+     far in you are — and drop the rest. The percentage budget above assumes all
+     nine are present, so it has to go with them.
+     ponytail: hiding a column also hides its inline editor. Editing seasons or
+     descriptions stays a desk job. */
+  .lib-table table { table-layout: auto; }
+  /* The five hidden columns are gone: every table now carries a responsive
+     min_width, so the library scrolls sideways like the other thirteen instead
+     of being the one table that silently drops data. Positional selectors also
+     retargeted themselves every time COLUMNS changed — the "Us" column shifted
+     all ten by one. Reflex first, and no nth-child on columns. */
+
+  /* Cells padded for a mouse waste a third of the width. */
+  .rt-TableCell, .rt-TableRowHeaderCell, .rt-TableColumnHeaderCell {
+    padding: 0.4rem 0.45rem;
+  }
+
+  /* The filter label column is 4.25rem of a 375px screen; let the chips have it
+     back and take the label as a line of its own. */
+  .filter-row { row-gap: 0.45rem; }
+
+}
+
+/* --- tablet: 768px to 1023px ----------------------------------------------- */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .radix-themes .rt-Container { padding-left: 1rem; padding-right: 1rem; }
+
+  /* Nine columns fit an iPad only by starving the title. Drop the three that
+     read fine elsewhere and keep the rest at their natural width. */
+  .lib-table table { table-layout: auto; }
+
+  /* A 24rem URL field next to a 12rem name field overflows at 768. */
+  .radix-themes .rt-TextFieldRoot { max-width: 100%; }
+}
+
+/* --- any touch screen ------------------------------------------------------ */
+/* Not tied to width: a touch laptop has the same fingers as a phone. Size-1
+   chips are 24px tall, which is a coin toss to hit. 32px is the compromise the
+   density of this page can pay; 44px would double the height of every filter
+   row. */
+@media (pointer: coarse) {
+  .radix-themes button.rt-Button { min-height: 2.25rem; }
+  .filter-row button.rt-Button,
+  .row-place button.rt-Button { min-height: 2rem; }
+  .rt-TableCell button.rt-Button { min-height: 1.9rem; }
+}
+
+
+/* ---------------------------------------------------------------------------
+   Per-page theming.
+
+   Two namespaces, because they answer different questions. `.room-*` is what
+   kind of activity a page is — voice, density, and the one signature hue.
+   `.page-*` is the surface the page is drawn on. Both live on the same wrapper
+   element, added by ui.themed().
+
+   The meaning channel is untouched: --mustard, --good, --teal and --vermilion
+   are never redeclared below, so green still means done on all fourteen pages.
+   --------------------------------------------------------------------------- */
+
+/* Radix resolves var() where it is declared, not where it is used. The bridge
+   at :root above therefore pins --color-panel-solid to the *root* --plate, and
+   a descendant that overrides --plate would change nothing. Redeclaring the
+   same aliases here re-resolves them against the page's ramp. */
+.room {
+  --color-background: var(--ink);
+  --color-panel-solid: var(--plate);
+  --gray-1: var(--ink);    --gray-2: var(--ink2); --gray-3: var(--plate);
+  --gray-4: var(--plate2); --gray-5: var(--rule); --gray-6: var(--edge);
+}
+
+/* The container is width-limited, so painting it leaves the gutters at the
+   root ink. A fixed pseudo-element behind everything is the one rule that
+   makes the whole viewport belong to the page. */
+.room::before {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background: var(--ink);
+}
+
+/* Room: voice and density. Radix sizes are calc()s over --scaling, so setting
+   it on a subtree rescales the components inside it. */
+.room-lobby     { --signature: var(--mustard); --title-face: 'Newsreader';     --scaling: 1.05; }
+.room-ledger    { --signature: #A1C653;        --title-face: 'Archivo Narrow'; --scaling: 0.95; }
+.room-field     { --signature: #538AC6;        --title-face: 'Archivo Narrow'; --scaling: 1;    }
+.room-private   { --signature: #C653BE;        --title-face: 'Newsreader';     --scaling: 1.05; }
+.room-household { --signature: var(--mustard); --title-face: 'Archivo';        --scaling: 1;    }
+
+.room .rt-Heading,
+.room .hero-title,
+.room .block-head { font-family: var(--title-face), 'Archivo Narrow', sans-serif; }
+
+/* Signature, in the four places §2 allows and nowhere else. The hero border
+   and the focus ring are at their own rules above; the active nav tab is an
+   inline style in ui.navbar, because inline wins and no CSS rule could. */
+.room .block-head { box-shadow: inset 0 -2px 0 var(--signature, var(--mustard)); padding-bottom: 0.3rem; }
+
+
+/* ---------------------------------------------------------------------------
+   Cross-fade between rooms.
+
+   Fourteen routes now sit at fourteen hues. A hard cut from /library navy to
+   /books burgundy reads as a glitch; a fade reads as a room change.
+
+   Two mechanisms, deliberately. `@view-transition` is the real cross-fade, and
+   it only applies if the navigation is same-document — unverified against
+   Reflex's router, which is why nothing depends on it. The keyframe below is
+   the unconditional fallback: the wrapper mounts on every route, so it always
+   runs. The reduced-motion block above already disables both.
+   --------------------------------------------------------------------------- */
+@view-transition { navigation: auto; }
+::view-transition-old(root),
+::view-transition-new(root) { animation-duration: var(--dur-2); }
+
+.room { animation: room-in var(--dur-2) var(--ease) both; }
+@keyframes room-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------------------------------------------------------------------------
+   Command palette. Markup injected by keys.js.
+
+   Built on the #kbd-help pattern that was already here: a full-screen overlay,
+   opened by adding .on, closed on Escape and on click outside. It sits on the
+   root ink rather than a page tint, because it is the one surface that does not
+   belong to a room.
+   --------------------------------------------------------------------------- */
+#palette {
+  display: none; position: fixed; inset: 0; z-index: 60;
+  background: color-mix(in srgb, var(--ink) 82%, transparent);
+  backdrop-filter: blur(2px);
+}
+#palette.on { display: grid; place-items: start center; padding-top: 12vh; }
+#palette .panel {
+  background: var(--plate); border: 1px solid var(--rule);
+  border-left: 3px solid var(--mustard); border-radius: 3px;
+  width: min(34rem, calc(100vw - 2rem)); box-shadow: var(--e3);
+  overflow: hidden;
+}
+#palette input {
+  width: 100%; box-sizing: border-box; border: 0; outline: 0;
+  background: transparent; color: var(--bone);
+  font-family: Archivo, system-ui, sans-serif; font-size: var(--t1);
+  padding: 0.85rem 1rem; border-bottom: 1px solid var(--rule-2);
+}
+#palette input::placeholder { color: var(--dim); }
+#palette .pal-list { list-style: none; margin: 0; padding: 0.35rem; max-height: 52vh; overflow-y: auto; }
+#palette .pal-list li {
+  display: flex; align-items: baseline; gap: 0.6rem; cursor: pointer;
+  padding: 0.45rem 0.65rem; border-radius: 2px;
+  transition: background var(--dur-1) var(--ease);
+}
+#palette .pal-list li.on { background: var(--plate3); box-shadow: inset 3px 0 0 var(--mustard); }
+#palette .pal-name {
+  font-family: 'Archivo Narrow', sans-serif; font-weight: 700;
+  color: var(--bone); letter-spacing: 0.01em;
+}
+#palette .pal-hint { color: var(--dim); font-size: 0.85rem; }
+@media (max-width: 768px) {
+  #palette.on { padding-top: 6vh; }
+  #palette .pal-hint { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Toast. Markup from ui.notice_toast.
+
+   The message was always there — every state has `notice` and 114 handlers set
+   it. It was rendered inline, mid-page, in small mustard text, which is why a
+   write felt like it did nothing. Same string, fixed corner, elevated, and
+   dismissed on a timer by keys.js.
+   --------------------------------------------------------------------------- */
+.toast {
+  position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 70;
+  max-width: min(26rem, calc(100vw - 2.5rem));
+  background: var(--plate2); color: var(--bone);
+  border-radius: 3px; border-left: 3px solid var(--mustard);
+  padding: 0.7rem 1rem; box-shadow: var(--e2);
+  animation: toast-in var(--dur-2) var(--ease) both;
+}
+/* keys.js adds .gone once the message has been up long enough. The node stays
+   in the DOM because Reflex owns it; only its appearance is ours to end. */
+.toast.gone {
+  opacity: 0; transform: translateY(4px);
+  transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+  pointer-events: none;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (max-width: 768px) {
+  .toast { right: 0.75rem; left: 0.75rem; bottom: 0.75rem; max-width: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   The question card. /convo.
+
+   The Private room has "an essay's rhythm, not a table's", and
+   the markup once rendered every question through twelve tables. This is
+   the rhythm: one question, set in the prose face at display size, with the
+   list folded away behind a button.
+   --------------------------------------------------------------------------- */
+.question-card {
+  background: var(--plate); border-radius: 3px;
+  border-left: 3px solid var(--signature, var(--mustard));
+  padding: 1.5rem 1.75rem; box-shadow: var(--e1);
+}
+.question {
+  font-family: Newsreader, Georgia, serif; font-weight: 400;
+  font-size: var(--t3); line-height: 1.25; letter-spacing: -0.01em;
+  color: var(--bone); margin: 1rem 0 1.25rem; text-wrap: balance;
+}
+@media (max-width: 768px) {
+  .question-card { padding: 1.1rem 1.2rem; }
+  .question { font-size: var(--t2); }
+}
+
+/* Two-person verdicts. Markup from verdicts.control.
+
+   Three states, not two: up, either-way and down. A row with nothing recorded
+   shows three outlines, which is what "nobody has said" has to look like if it
+   is to stay distinguishable from "we could go either way". */
+.verdicts button {
+  font-size: 0.7rem; line-height: 1; padding: 0.2rem 0.35rem;
+  border: 1px solid var(--rule-2);
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.verdicts button:hover { border-color: var(--rule); }
+@media (pointer: coarse) {
+  .verdicts button { min-height: 2rem; min-width: 2.2rem; }
+}
+
+/* ===========================================================================
+   BUBBLY.
+
+   Reverses two rules written earlier in this file, on purpose:
+     line 23  "Shadow means state, not decoration"
+     line 83  "A block, not a card: no shadow, no uniform radius"
+
+   This block was lost once already: it used to sit at the end of the file, and
+   a script that rebuilt the tail from the generated marker onward truncated it
+   without anyone noticing for two sessions. It lives above the generated
+   region now, which is why that region has an END marker.
+   =========================================================================== */
+
+/* 1. Corners. */
+.hero,
+.block,
+#palette .panel,
+#kbd-help .panel { border-radius: 10px; }
+
+.rt-TableRoot,
+.toast,
+
+/* The Tonight cards are the app's front door and carry the most roundness. */
+.tonight-card { border-radius: 18px; }
+
+/* The bar spans the window, so it has no corners to round. */
+.nav { border-radius: 0; }
+.question-card { border-radius: 14px; }
+
+#palette .pal-list li,
+.filter-row .rt-Button,
+.mood-chip,
+.nav-tab,
+.nav-mark,
+.rt-Badge { border-radius: 999px; }
+
+/* 2. Resting elevation. */
+.hero,
+.block,
+.tonight-card,
+.question-card { box-shadow: var(--e1); }
+
+.rt-TableRoot { box-shadow: var(--e1); overflow: hidden; }
+
+/* 3. Air, because rounder corners crowd their own content. */
+.block { padding: 1.15rem 1.25rem; }
+.tonight-card { padding: 1.4rem 1.55rem; }
+
+/* The place card is the reason the page exists, so it lifts further than its
+   three neighbours rather than the same amount. */
+.tonight-card { transition: box-shadow var(--dur-1) var(--ease),
+                            transform var(--dur-1) var(--ease); }
+.tonight-card:hover { box-shadow: var(--e2); transform: var(--lift); }
+
+/* 4. Press feedback: the one genuinely "alive" part of this block. */
+.rt-Button { transition: transform var(--dur-1) var(--ease),
+                         box-shadow var(--dur-1) var(--ease); }
+.rt-Button:active { transform: translateY(1px) scale(0.985); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rt-Button:active { transform: none; }
+}
+
+/* Page width. "why is the max width so skinny? make it
+   wider at least 1440px".
+
+   Two traps here, both hit once. The max-width is on `.rt-ContainerInner`, not
+   `.rt-Container`, so overriding the outer element changes nothing — Radix
+   sets `max-width: var(--container-4)` and that token is 1136px. And the
+   container carried `padding="1.75rem 1.5rem"` inline from twelve call sites,
+   which beat any gutter written here; those are gone from the Python now.
+
+   Raising the token rather than hard-coding a width keeps `size="4"` meaning
+   what it says everywhere it is used. */
+.room { --container-4: 1440px; }
+.room .rt-Container {
+  width: 100%;
+  padding: 0 var(--gutter) 2.5rem;
+}
+:root { --gutter: clamp(0.75rem, 3vw, 3rem); }
+
+/* The very wide tables are the reason 1136px felt skinny; let those two off
+   the leash entirely rather than widening every page to suit them. */
+.lib-table, .room-field .rt-TableRoot { max-width: none; }
+
+/* The laptop gap. Breakpoints ran 767.98 -> 1023.98 -> nothing, so every screen
+   from a 13" laptop to a 27" monitor got identical spacing built for the 27".
+   A 15.6" at 150% scaling is ~1280 CSS px: 3rem of gutter each side left ~1180
+   for a nine-column table, which is where "squeezed" comes from.
+
+   The container cap stays at 1440; this only stops the page paying full-size
+   gutters and cell padding on a screen that cannot afford them. Nothing here
+   applies above 1440, so the 27" is untouched. */
+@media (min-width: 1024px) and (max-width: 1439.98px) {
+  :root { --gutter: clamp(0.75rem, 1.6vw, 1.25rem); }
+
+  /* Radix sizes table padding for a comfortable desktop; at this width the
+     padding is what pushes columns off the edge, not the content. */
+  .rt-TableRoot :is(th, td) { padding-left: 0.5rem; padding-right: 0.5rem; }
+
+  /* Toolbars set rem widths for a 1400px window and then wrap awkwardly. */
+  .radix-themes .rt-TextFieldRoot { min-width: 0; }
+}
+
+/* The prose surfaces are the exception: a line of text 2,000px wide is
+   unreadable however big the screen is. */
+.question-card, .prose { max-width: 70ch; }
+
+/* The outfit pieces on Tonight. */
+.outfit-piece {
+  background: var(--plate2); border-radius: 8px;
+  padding: 0.7rem 0.9rem; min-width: 9rem;
+  border-left: 3px solid var(--signature, var(--mustard));
+}
+
+/* Rating and notes, in place on every table. core/inline.py. An input that
+   reads as text until you touch it: no border at rest, so a table of them does
+   not look like a form, and the border arrives on hover and focus. */
+.inline-edit { background: transparent; }
+.inline-edit:not(:hover):not(:focus-within) { box-shadow: none; }
+.inline-rating { width: 3.5rem; }
+.inline-notes { width: 100%; min-width: 9rem; }
+
+/* The gallery on Tonight. pages/gallery.py. Square tiles from 480px
+   thumbnails; the original opens on click. Layout (the column count) is a Reflex
+   responsive prop on the grid, so only appearance lives here. */
+.gallery-tile { position: relative; }
+.gallery-thumb {
+  display: block; width: 100%; aspect-ratio: 1; object-fit: cover;
+  border-radius: 8px; background: var(--plate2);
+}
+.gallery-del { position: absolute; top: 0.3rem; right: 0.3rem; }
+.gallery-drop {
+  border: 1px dashed var(--rule); border-radius: 8px; padding: 0.9rem;
+  cursor: pointer; text-align: center; color: var(--dim);
+}
+.gallery-count { color: var(--dim); }
+
+/* == GENERATED: page ramps. Nothing may be appended after this block by
+   hand — it is rewritten wholesale. Put new rules ABOVE it. ==
+   Page: the surface ramp, one per route. Generated — `python test_theme.py`
+   prints exactly these nine lines. Do not hand-edit; change PAGE_HUES and
+   re-run. */
+.page-lobby { --ink: #0E1137; --ink2: #12153D; --plate: #181B4D; --plate2: #262A64; --plate3: #2F336F; --rule: #373D87; --edge: #424797; }
+.page-library { --ink: #0B1528; --ink2: #0E1A2E; --plate: #12213A; --plate2: #1E3050; --plate3: #26395A; --rule: #2D446D; --edge: #36507C; }
+.page-books { --ink: #2A0B16; --ink2: #2F0E1A; --plate: #3C1322; --plate2: #521F31; --plate3: #5D273B; --rule: #702E46; --edge: #7F3752; }
+.page-music { --ink: #210C2D; --ink2: #260F33; --plate: #301441; --plate2: #432157; --plate3: #4E2A62; --rule: #5D3177; --edge: #6B3A86; }
+.page-dates { --ink: #091721; --ink2: #0B1B26; --plate: #0F2331; --plate2: #1A3344; --plate3: #213C4F; --rule: #27485F; --edge: #2F536D; }
+.page-convo { --ink: #1A0E35; --ink2: #1E113B; --plate: #26174A; --plate2: #372561; --plate3: #402E6C; --rule: #4D3683; --edge: #594093; }
+.page-recipes { --ink: #231109; --ink2: #28150C; --plate: #341B10; --plate2: #47281B; --plate3: #523123; --rule: #633A29; --edge: #714431; }
+.page-household { --ink: #071910; --ink2: #091D13; --plate: #0C2619; --plate2: #143625; --plate3: #1B402E; --rule: #204D36; --edge: #275940; }
+/* == END GENERATED == */

@@ -1,0 +1,207 @@
+#!/usr/bin/env bash
+# Set this repository up on a machine that has never run it.
+#
+#   ./setup.sh
+#   ./setup.sh --db /tmp/ledger-20260101.db.gz
+#   ./setup.sh --home "48.85,2.35" --host mybox.example.ts.net
+#   ./setup.sh --no-apt
+#
+# Options:
+#   --db PATH     restore this backup (.gz or plain) into ledger_app/ledger.db
+#   --home LAT,LON  write LEDGER_HOME_LATLON into .env. Every distance in the
+#                 app is measured from it; unset, distances are measured
+#                 from 0,0 and are obviously wrong.
+#   --host NAME   write LEDGER_ALLOWED_HOST into .env. Without it Vite rejects
+#                 the request with a host error that never names the setting.
+#   --no-apt      skip the system packages
+#
+# What this cannot do for you, because neither is in the repository:
+#   - ledger.db  — gitignored personal data; starts empty, or restore a backup
+#   - .env       — gitignored API keys; the template is copied for you to fill
+#   - json/      — gitignored API caches; rebuilt as the scripts run
+#   - gallery/   — gitignored photos; uploaded through the app
+#
+# Idempotent. Every step checks whether it is already done, so re-running after
+# fixing one failure does not redo the rest.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP="$ROOT/ledger_app"
+DB="$APP/ledger.db"
+VENV="$APP/.venv"
+PY="$VENV/bin/python"
+
+DB_ARCHIVE=""
+HOME_LATLON=""
+ALLOWED_HOST=""
+DO_APT=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --db) DB_ARCHIVE="${2:?--db needs a path}"; shift 2 ;;
+    --home) HOME_LATLON="${2:?--home needs \"lat,lon\"}"; shift 2 ;;
+    --host) ALLOWED_HOST="${2:?--host needs a tailnet name}"; shift 2 ;;
+    --no-apt) DO_APT=0; shift ;;
+    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+    *) echo "unknown option: $1"; exit 2 ;;
+  esac
+done
+
+step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
+ok()   { printf '    ok   %s\n' "$1"; }
+warn() { printf '    !!   %s\n' "$1"; }
+
+# --- 1. system packages ------------------------------------------------------
+# poppler-utils and tesseract are only needed to re-run the OCR importers; the
+# app itself does not touch them. They are installed anyway because finding out
+# later means stopping halfway through an import.
+if [ "$DO_APT" = 1 ]; then
+  step "System packages"
+  missing=""
+  for p in poppler-utils tesseract-ocr sqlite3 ufw; do
+    dpkg -s "$p" >/dev/null 2>&1 || missing="$missing $p"
+  done
+  if [ -n "$missing" ]; then
+    echo "    need:$missing"
+    sudo apt install -y $missing
+  else
+    ok "all present"
+  fi
+fi
+
+# --- 2. uv -------------------------------------------------------------------
+step "uv"
+if command -v uv >/dev/null 2>&1; then
+  ok "$(uv --version)"
+else
+  warn "uv not found — install it, then re-run:"
+  echo "      curl -LsSf https://astral.sh/uv/install.sh | sh"
+  exit 1
+fi
+
+# --- 3. virtualenv -----------------------------------------------------------
+# The venv is uv-managed and has no pip inside it, so anything that expects
+# `.venv/bin/pip` will fail. Use `uv pip` with VIRTUAL_ENV set.
+step "Python environment"
+if [ -x "$PY" ]; then
+  ok "venv exists ($("$PY" -V))"
+else
+  ( cd "$APP" && uv venv .venv )
+  ok "created $VENV"
+fi
+( cd "$APP" && VIRTUAL_ENV="$VENV" uv pip install -q -r requirements.txt )
+ok "requirements installed"
+
+# --- 4. secrets --------------------------------------------------------------
+step "Secrets"
+if [ -f "$ROOT/.env" ]; then
+  ok ".env already present (not overwritten)"
+else
+  install -m 600 /dev/null "$ROOT/.env"
+  cat "$ROOT/.env.example" >> "$ROOT/.env"
+  chmod 600 "$ROOT/.env"
+  warn "created .env from the template — fill in the values before first run"
+fi
+[ "$(stat -c %a "$ROOT/.env")" = "600" ] || chmod 600 "$ROOT/.env"
+
+# --- 5. database -------------------------------------------------------------
+# Never `cp ledger.db` from a running app: under WAL a plain copy can catch a
+# live transaction and misses the -wal sidecar, producing a file that opens
+# cleanly and restores corrupt. backup_db.sh uses the online backup API.
+step "Database"
+if [ -f "$DB" ]; then
+  ok "ledger.db present, left alone"
+elif [ -n "$DB_ARCHIVE" ]; then
+  case "$DB_ARCHIVE" in
+    *.gz) gunzip -c "$DB_ARCHIVE" > "$DB" ;;
+    *)    cp "$DB_ARCHIVE" "$DB" ;;
+  esac
+  ok "restored from $DB_ARCHIVE"
+else
+  warn "no ledger.db and no --db given. Starting empty."
+  warn "To bring the real one across, on the old machine:"
+  echo "      ./backup_db.sh && scp backups/ledger-<newest>.db.gz this-box:/tmp/"
+  echo "      then: ./setup.sh --db /tmp/ledger-<newest>.db.gz"
+fi
+
+# --- 6. schema ---------------------------------------------------------------
+step "Migrations"
+( cd "$APP" && "$VENV/bin/reflex" db migrate )
+# `python - <<EOF` has no __file__, so the path is an argument.
+head="$("$PY" -c '
+import sqlite3, sys
+try:
+    print(sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True)
+          .execute("select version_num from alembic_version").fetchone()[0])
+except Exception as exc:
+    print(f"unreadable ({exc})")
+' "$DB" 2>/dev/null || echo unknown)"
+ok "schema at $head"
+
+# --- 7. machine-specific -----------------------------------------------------
+# HOME is the origin for every distance in the app: the Tonight radius filter
+# and the /dates km columns both measure from it. Unset, it is 0,0, so the
+# numbers are obviously wrong rather than plausibly wrong.
+step "Machine-specific settings"
+
+# Appends only if the key is absent, so an .env copied from the old box is
+# never rewritten by a flag typed out of habit.
+set_env() {
+  local key="$1" val="$2"
+  if grep -q "^$key=" "$ROOT/.env" 2>/dev/null; then
+    ok "$key already set in .env, left alone"
+  else
+    printf '%s="%s"\n' "$key" "$val" >> "$ROOT/.env"
+    ok "$key written to .env"
+  fi
+}
+
+[ -n "$HOME_LATLON" ]  && set_env LEDGER_HOME_LATLON  "$HOME_LATLON"
+[ -n "$ALLOWED_HOST" ] && set_env LEDGER_ALLOWED_HOST "$ALLOWED_HOST"
+
+if ! grep -q "^LEDGER_HOME_LATLON=" "$ROOT/.env" 2>/dev/null; then
+  warn "LEDGER_HOME_LATLON is not set — every distance will be measured from"
+  warn "0,0. Re-run with --home \"lat,lon\", or add it to .env."
+fi
+if ! grep -q "^LEDGER_ALLOWED_HOST=" "$ROOT/.env" 2>/dev/null; then
+  warn "LEDGER_ALLOWED_HOST is not set — Vite will reject requests to this"
+  warn "box's tailnet name. Re-run with --host <name>.ts.net."
+fi
+
+# --- gitignored extras -------------------------------------------------------
+# None of these are in the repository and none are fatal. The app runs without
+# every one of them; this says what each costs so the decision is informed.
+step "Gitignored files"
+report_missing() {
+  local path="$1" size="$2" what="$3"
+  if [ -e "$ROOT/$path" ]; then
+    ok "$path present"
+  else
+    warn "$path missing${size:+ ($size)} — $what"
+  fi
+}
+report_missing ".env" "" "API keys. Importers fail; the app itself does not use them"
+report_missing "ledger_app/ledger.db" "" "all the data. Without it you get an empty but working app"
+report_missing "json" "" "API caches. Created the first time a TMDB or Last.fm script runs"
+report_missing "gallery" "≤100 photos" "the Tonight gallery. Upload photos from the app, or restore backups/gallery/"
+if [ ! -e "$ROOT/backups" ]; then
+  warn "backups/ missing — history only; the next ./backup_db.sh creates it"
+fi
+
+# --- 8. check ----------------------------------------------------------------
+step "Preflight"
+if "$PY" "$ROOT/scripts/ops/preflight.py"; then
+  ok "preflight clean"
+else
+  warn "preflight reported problems — read them above before starting the app"
+fi
+
+step "Done"
+cat <<'EOF'
+    Start it:      ./ledger.sh start
+    Bind check:    ./ledger.sh check      (expect: loopback only)
+    Auto-restart:  ./ledger.sh watch      (rebuilds on save; holds while
+                                           someone is connected)
+
+    Then look at it in a browser. Several bugs on this project were invisible
+    to every check except looking.
+EOF

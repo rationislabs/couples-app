@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 
 from .models import Verdict
 from .household import SLOTS
+from .profile import ProfileState
 from .ui import choice_row
 
 def _engine():
@@ -74,6 +75,16 @@ def write(kind: str, row_id: int, person: str, value: str) -> None:
         s.commit()
 
 
+async def write_as(state: rx.State, kind: str, row_id: int, person: str, value: str) -> bool:
+    """Write only the vote of the person selected in this browser. The other
+    row's buttons are disabled, but a handler must not trust the client."""
+    me = (await state.get_state(ProfileState)).me
+    if person != me:
+        return False
+    write(kind, row_id, person, value)
+    return True
+
+
 def agreed(verdicts: dict[str, str]) -> bool:
     """Both said yes. The query the app could not answer before this table."""
     return all(verdicts.get(p) == UP for p in PEOPLE)
@@ -89,18 +100,22 @@ def summarise(verdicts: dict[str, str], names: dict[str, str]) -> str:
 
 
 def control(verdicts, on_click) -> rx.Component:
-    """Two rows of three buttons. `verdicts` is a Var holding {person: value}.
+    """Two rows of three buttons, one row per person. `verdicts` is a Var
+    holding {slot: value}. Only the row of the person selected in the header
+    is clickable; the other row shows their answer.
 
     `on_click` takes (person, value) and is built by the caller, which is what
     binds the row id — the page owns the event because it has to reload its own
     rows afterwards.
     """
     def one(person: str) -> rx.Component:
+        mine = ProfileState.me == person
         return rx.hstack(
-            rx.text(person[0].upper(), size="1",
+            rx.text(ProfileState.initials[person], size="1",
                     style={"color": "var(--dim)", "width": "1rem"}),
             *[rx.button(
                 GLYPH[v], size="1",
+                disabled=~mine,
                 variant=rx.cond(verdicts[person] == v, "solid", "surface"),
                 on_click=on_click(person, v),
                 style={"color": rx.cond(verdicts[person] == v,
@@ -112,8 +127,12 @@ def control(verdicts, on_click) -> rx.Component:
             spacing="1", align="center",
         )
 
-    return rx.vstack(*[one(p) for p in PEOPLE], spacing="1", align="start",
-                     class_name="verdicts")
+    return rx.vstack(
+        *[one(p) for p in PEOPLE],
+        rx.cond(ProfileState.me == "",
+                rx.text("Pick your name at the top to vote.", size="1",
+                        style={"color": "var(--dim)"})),
+        spacing="1", align="start", class_name="verdicts")
 
 
 def unvoted_row(state) -> rx.Component:
@@ -121,5 +140,4 @@ def unvoted_row(state) -> rx.Component:
     backlog of unanswered rows can be worked through. `state` needs `unvoted`
     and `set_unvoted`. A row leaves the list the moment its vote lands."""
     return choice_row("to vote", state.unvoted, state.set_unvoted,
-                      [(p, p.capitalize()) for p in PEOPLE])
-
+                      [(p, ProfileState.names[p]) for p in PEOPLE])

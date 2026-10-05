@@ -445,10 +445,10 @@ class RecipeState(rx.State):
         self.search, self.page = v, 0
 
     @rx.event
-    def set_verdict(self, row_id: int, person: str, value: str):
-        V.write("recipe", row_id, person, value)
-        self._read_verdicts()
-        self.page = min(self.page, self.last_page)
+    async def set_verdict(self, row_id: int, person: str, value: str):
+        if await V.write_as(self, "recipe", row_id, person, value):
+            self._read_verdicts()
+            self.page = min(self.page, self.last_page)
 
     @rx.event
     def set_unvoted(self, person: str):

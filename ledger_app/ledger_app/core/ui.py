@@ -7,6 +7,8 @@ from typing import Callable
 
 import reflex as rx
 
+from .profile import toggle as profile_toggle
+
 ACCENT = "orange"
 
 # Names, because nobody remembers that Macedonia is MK. The database keeps the
@@ -179,6 +181,7 @@ def navbar(active: str) -> rx.Component:
             display=["none", "none", "none", "flex", "flex"],
         ),
         rx.spacer(),
+        profile_toggle(),
         rx.text(NavState.emoji, class_name="nav-emoji"),
         rx.box(
             rx.menu.root(

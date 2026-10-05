@@ -463,16 +463,16 @@ class DateState(rx.State):
             return DateState.refresh_map
 
     @rx.event
-    def set_verdict(self, row_id: int, person: str, value: str):
-        V.write("place", row_id, person, value)
-        self._read_verdicts()
-        # under the "to vote" filter the row just left the list
-        self.page = min(self.page, self.last_page)
-        if self.show_map and self.unvoted:
-            return DateState.refresh_map
+    async def set_verdict(self, row_id: int, person: str, value: str):
+        if await V.write_as(self, "place", row_id, person, value):
+            self._read_verdicts()
+            # under the "to vote" filter the row just left the list
+            self.page = min(self.page, self.last_page)
+            if self.show_map and self.unvoted:
+                return DateState.refresh_map
 
-        if self.show_map:
-            return DateState.refresh_map
+            if self.show_map:
+                return DateState.refresh_map
     @rx.event
     def toggle_visited(self, pid: int):
         """Patched in place: reloading re-read every place and rebuilt every

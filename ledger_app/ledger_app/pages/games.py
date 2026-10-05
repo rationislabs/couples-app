@@ -152,9 +152,9 @@ class GameState(rx.State):
         self.remote_only = not self.remote_only
 
     @rx.event
-    def set_verdict(self, row_id: int, person: str, value: str):
-        V.write("game", row_id, person, value)
-        self._read_verdicts()
+    async def set_verdict(self, row_id: int, person: str, value: str):
+        if await V.write_as(self, "game", row_id, person, value):
+            self._read_verdicts()
 
     @rx.event
     def set_unvoted(self, person: str):

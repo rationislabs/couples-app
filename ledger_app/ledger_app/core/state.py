@@ -297,11 +297,11 @@ class LedgerState(rx.State):
         } for r in rows]
 
     @rx.event
-    def set_verdict(self, row_id: str, person: str, value: str):
-        V.write("title", int(row_id), person, value)
-        self.load()
-        # under the "to vote" filter the row just left the list
-        self.page = min(self.page, self.last_page)
+    async def set_verdict(self, row_id: str, person: str, value: str):
+        if await V.write_as(self, "title", int(row_id), person, value):
+            self.load()
+            # under the "to vote" filter the row just left the list
+            self.page = min(self.page, self.last_page)
 
     @rx.event
     def set_unvoted(self, person: str):

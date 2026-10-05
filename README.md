@@ -25,7 +25,8 @@ edited in place.
 ## Run it with Docker
 
 You need Docker with Compose v2.24 or later and a free [Tailscale](https://tailscale.com) account.
-Every phone or laptop that should open the app joins the same tailnet.
+Every phone or laptop that should open the app joins the same tailnet. The tailnet needs MagicDNS and HTTPS Certificates enabled
+(Tailscale admin console > DNS), or the `https://couples.<tailnet>.ts.net` address cannot get a certificate.
 
 ```bash
 mkdir couples && cd couples
@@ -133,13 +134,11 @@ app runs: under WAL the copy can miss the newest writes.
 No pytest. Each test file is a plain script, run from the repo root:
 
 ```bash
-for f in tests/test_*.py; do ledger_app/.venv/bin/python "$f" || echo "FAIL $f"; done
-bash tests/test_watch.sh
-bash tests/test_setup.sh
+tests/run.sh
 ```
 
-The tests share the app's database. Each one creates its own rows and deletes
-them by id afterwards.
+Run `tests/run.sh`: it runs every test on a fresh temporary database, so nothing
+touches your real data.
 
 ## Schema changes
 

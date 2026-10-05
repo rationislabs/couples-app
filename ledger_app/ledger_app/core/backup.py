@@ -132,8 +132,15 @@ def record(db: pathlib.Path, ok: bool, error: str = "", now: datetime | None = N
                 "update household set last_backup_at = ?, last_backup_ok = ?, "
                 "last_backup_error = ? where id = 1",
                 ((now or datetime.now()).isoformat(sep=" "), ok, error))
-    except sqlite3.OperationalError:
+    except sqlite3.Error:
         pass
+
+
+def _keep() -> int:
+    try:
+        return max(1, int(os.environ.get("LEDGER_BACKUP_KEEP") or 30))
+    except ValueError:
+        return 30
 
 
 def nightly(now: datetime | None = None) -> tuple[bool, str]:
@@ -143,7 +150,7 @@ def nightly(now: datetime | None = None) -> tuple[bool, str]:
     db, dest = paths.db_path(), paths.backup_dir()
     try:
         out = write(db, dest, f"ledger-{_stamp(now)}.db")
-        prune(dest, NIGHTLY, int(os.environ.get("LEDGER_BACKUP_KEEP", "30")))
+        prune(dest, NIGHTLY, _keep())
         live, kept = mirror_gallery(paths.gallery_dir(), dest / "gallery")
     except Exception as e:      # noqa: BLE001 — any failure is recorded, see docstring
         record(db, False, str(e), now)

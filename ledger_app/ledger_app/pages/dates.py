@@ -35,7 +35,7 @@ ANY_CITY = "any city"
 
 
 
-def build_map(rows: list[dict], centre: tuple[float, float]) -> tuple[str, int]:
+def build_map(rows: list[dict], centre: tuple[float, float] | None) -> tuple[str, int]:
     """Return (html, pin_count) for an inline Leaflet map.
 
     Returns markup rather than writing a file, and the iframe takes it through
@@ -82,10 +82,10 @@ def build_map(rows: list[dict], centre: tuple[float, float]) -> tuple[str, int]:
   .cl-done{border-color:#5FBE8C}
 </style></head><body><div id="map"></div><script>
 const pins = __PINS__, home = __HOME__;
-const map = L.map('map', {scrollWheelZoom:true}).setView(home, 9);
+const map = L.map('map', {scrollWheelZoom:true}).setView(home || [20,0], home ? 9 : 2);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution:'&copy; OpenStreetMap contributors', maxZoom:19}).addTo(map);
-L.circleMarker(home, {radius:7,color:'#E8EDF5',weight:2,fillColor:'#E8EDF5',
+if (home) L.circleMarker(home, {radius:7,color:'#E8EDF5',weight:2,fillColor:'#E8EDF5',
   fillOpacity:1}).addTo(map).bindPopup('Home');
 // Visited was drawn dim grey, which read as "faded out" rather than "been
 // there". Green is the one colour in this app that means done.
@@ -112,7 +112,7 @@ for (const p of pins) {
 if (pins.length) map.fitBounds(group.getBounds().pad(0.15));
 </script></body></html>"""
     doc = doc.replace("__PINS__", json.dumps(pins, separators=(",", ":"))
-                      ).replace("__HOME__", json.dumps(list(centre)))
+                      ).replace("__HOME__", json.dumps(list(centre) if centre else None))
     return doc, len(pins)
 
 
@@ -195,6 +195,8 @@ class DateState(rx.State):
     def load(self):
         home = HH.home()
         self.has_home = home is not None
+        if not self.has_home:
+            self.max_km = 0             # a radius chosen before the home was cleared
         with Session(ENGINE) as s:
             places = [p for p in s.exec(select(Place)).all() if not p.dismissed]
             hidden = len([1 for p in s.exec(select(Place)).all() if p.dismissed])
@@ -431,7 +433,7 @@ class DateState(rx.State):
         if not self.show_map:
             self.map_html = ""          # do not ship markup nobody is looking at
             return
-        self.map_html, self.map_pins = build_map(self._matches(), HH.home() or (0.0, 0.0))
+        self.map_html, self.map_pins = build_map(self._matches(), HH.home())
 
     @rx.event
     def set_max_km(self, km: int):

@@ -8,7 +8,8 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY="${PY:-$ROOT/ledger_app/.venv/bin/python}"
 export LEDGER_DATA_DIR; LEDGER_DATA_DIR="$(mktemp -d)"
-trap 'rm -rf "$LEDGER_DATA_DIR"' EXIT
+export LEDGER_BACKUP_DIR; LEDGER_BACKUP_DIR="$(mktemp -d)"
+trap 'rm -rf "$LEDGER_DATA_DIR" "$LEDGER_BACKUP_DIR"' EXIT
 ( cd "$ROOT/ledger_app" && "$PY" -m alembic upgrade head >/dev/null ) \
   || { echo "FAIL migrating a fresh database"; exit 1; }
 fail=0

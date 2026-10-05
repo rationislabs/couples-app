@@ -9,5 +9,6 @@
 set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY="$DIR/ledger_app/.venv/bin/python"
+cd "$DIR/ledger_app"   # the package resolves from here
 if [ "${1:-}" = "--verify" ]; then exec "$PY" -m ledger_app.core.backup verify; fi
 exec "$PY" -m ledger_app.core.backup backup

@@ -7,6 +7,10 @@ import datetime as dt
 import pathlib
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+import _db  # noqa: E402
+_db.migrate()
+
 from sqlmodel import Session, select                              # noqa: E402
 
 from ledger_app.pages.home import MOOD_TYPES, HomeState        # noqa: E402

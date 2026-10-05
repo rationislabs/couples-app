@@ -87,6 +87,7 @@ else
   ok "created $VENV"
 fi
 ( cd "$APP" && VIRTUAL_ENV="$VENV" uv pip install -q -r requirements.txt )
+( cd "$APP" && VIRTUAL_ENV="$VENV" uv pip install -q --no-deps -e . )   # backup_db.sh runs python -m ledger_app.core.backup
 ok "requirements installed"
 
 # --- 4. secrets --------------------------------------------------------------
@@ -123,7 +124,10 @@ fi
 
 # --- 6. schema ---------------------------------------------------------------
 step "Migrations"
-( cd "$APP" && LEDGER_HOME_LATLON="${HOME_LATLON:-}" "$VENV/bin/reflex" db migrate )
+# An existing install keeps its names and home in .env; the people-as-ids
+# migration reads them from the environment, and LEDGER_PEOPLE wins there.
+set -a; . <(grep -E '^LEDGER_(PEOPLE|HOME_LATLON)=' "$ROOT/.env" 2>/dev/null || true); set +a
+( cd "$APP" && LEDGER_HOME_LATLON="${HOME_LATLON:-${LEDGER_HOME_LATLON:-}}" "$VENV/bin/reflex" db migrate )
 # `python - <<EOF` has no __file__, so the path is an argument.
 head="$("$PY" -c '
 import sqlite3, sys
@@ -137,8 +141,8 @@ ok "schema at $head"
 
 # --- 7. machine-specific -----------------------------------------------------
 # HOME is the origin for every distance in the app: the Tonight radius filter
-# and the /dates km columns both measure from it. Unset, it is 0,0, so the
-# numbers are obviously wrong rather than plausibly wrong.
+# and the /dates km columns both measure from it. Unset, distances are hidden
+# and the first-run page asks for it.
 step "Machine-specific settings"
 
 # Appends only if the key is absent, so an .env copied from the old box is

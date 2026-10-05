@@ -78,6 +78,16 @@ def test_nightly_records_success():
     assert row == (1, "")
 
 
+def test_keep_zero_keeps_the_backup_just_written():
+    os.environ["LEDGER_BACKUP_KEEP"] = "0"
+    try:
+        ok, msg = B.nightly(T0 + timedelta(days=9))
+        assert ok, msg
+        assert (DEST / msg.split()[1].rstrip(";")).exists(), msg
+    finally:
+        del os.environ["LEDGER_BACKUP_KEEP"]
+
+
 def test_restore_refuses_a_bad_file():
     bad = DEST / "truncated.db.gz"
     bad.write_bytes(gzip.compress(DB.read_bytes())[:200])
@@ -133,7 +143,8 @@ if __name__ == "__main__":
     for fn in (test_write_then_verify, test_a_corrupt_file_fails_verification,
                test_prune_keeps_the_newest_and_leaves_the_other_kind,
                test_gallery_mirror_keeps_deleted_photos_and_skips_thumbs,
-               test_nightly_records_success, test_restore_refuses_a_bad_file,
+               test_nightly_records_success, test_keep_zero_keeps_the_backup_just_written,
+               test_restore_refuses_a_bad_file,
                test_restore_keeps_the_current_database_aside,
                test_restore_twice_never_overwrites_the_first_aside,
                test_failed_write_leaves_no_partial_file):

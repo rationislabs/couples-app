@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import http.server
 import json
+import os
 import pathlib
 import secrets
 import sys
@@ -53,6 +54,8 @@ def env() -> dict:
             if "=" in line and not line.strip().startswith("#"):
                 k, v = line.split("=", 1)
                 out[k.strip()] = v.strip()
+    # The container passes keys as environment variables; they win over the file.
+    out.update({k: v for k, v in os.environ.items() if k.startswith("SPOTIFY_") and v})
     return out
 
 

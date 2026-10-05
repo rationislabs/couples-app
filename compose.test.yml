@@ -7,3 +7,9 @@ services:
       LEDGER_BIND_HOST: 0.0.0.0
     ports:
       - "127.0.0.1:3300:3000"
+    volumes:
+      - data:/data
+      - backups:/backups
+volumes:
+  data:
+  backups:

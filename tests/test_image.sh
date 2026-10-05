@@ -37,4 +37,26 @@ check "the frontend dials port 3000, not Reflex's default 8000" \
   '! docker run --rm --entrypoint sh "$IMAGE" -c "grep -rqs localhost:8000 .web"'
 check "scripts find the venv the pages call" \
   'docker run --rm --entrypoint test "$IMAGE" -x /app/ledger_app/.venv/bin/python'
+# The spec's "/ redirects to /setup" happens client-side, over the websocket,
+# so curl cannot see it. The redirect rule is covered by test_setup_flow.py;
+# here we only prove the route was compiled into the image.
+check "/setup is a compiled route" '[ "$(curl -sL -o /dev/null -w "%{http_code}" "$URL/setup")" = 200 ]'
+check "an unknown route is not served as 200" '[ "$(curl -sL -o /dev/null -w "%{http_code}" "$URL/no-such-route-xyz")" != 200 ]'
+backup_seen=no
+for _ in $(seq 1 30); do
+  if $DC exec -T app sh -c 'ls /backups/ledger-2*.db.gz' >/dev/null 2>&1; then
+    backup_seen=yes; break
+  fi
+  sleep 1
+done
+check "a fresh install backs itself up at start" '[ "$backup_seen" = yes ]'
+check "compose.yml publishes no port" '! grep -qE "^[[:space:]]*ports:" compose.yml'
+bad=$(mktemp -d); printf 'not a backup' > "$bad/bad.db.gz"; chmod -R a+rX "$bad"
+check "restore rejects a bad file" \
+  '! docker run --rm -v "$bad:/in:ro" "$IMAGE" restore /in/bad.db.gz >/dev/null 2>&1'
+rm -rf "$bad"
+envf=$(mktemp); printf 'TS_AUTHKEY=x\nTMDB_API_KEY=y\n' > "$envf"
+check "compose.yml does not hand TS_AUTHKEY to the app" \
+  'docker compose -f compose.yml --env-file "$envf" config --format json | python3 -c "import json,sys; e=json.load(sys.stdin)[\"services\"][\"app\"][\"environment\"]; sys.exit(not (\"TMDB_API_KEY\" in e and \"TS_AUTHKEY\" not in e))"'
+rm -f "$envf"
 exit $fail

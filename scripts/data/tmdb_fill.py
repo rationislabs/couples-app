@@ -21,7 +21,7 @@ Data from TMDB. This product uses the TMDB API but is not endorsed or certified 
 from __future__ import annotations
 
 import datetime as dt
-import difflib, json, pathlib, re, sys, time, urllib.parse, urllib.request
+import difflib, json, os, pathlib, re, sys, time, urllib.parse, urllib.request
 
 from sqlmodel import Session, create_engine, select
 from ledger_app.core.models import Genre, Title, TitleGenre  # noqa: E402
@@ -51,10 +51,13 @@ def genre_maps() -> dict[int, str]:
     return out
 
 def token() -> str:
-    for line in (APP.parent / ".env").read_text(encoding="utf-8").splitlines():
+    if t := os.environ.get("TMDB_READ_TOKEN"):     # the container passes keys this way
+        return t
+    env = APP.parent / ".env"
+    for line in (env.read_text(encoding="utf-8").splitlines() if env.exists() else []):
         if line.startswith("TMDB_READ_TOKEN="):
             return line.split("=", 1)[1].strip()
-    sys.exit("no TMDB_READ_TOKEN in .env")
+    sys.exit("no TMDB_READ_TOKEN in the environment or .env")
 
 TOKEN = token()
 GENRES: dict[int, str] = {}

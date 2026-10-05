@@ -1,0 +1,54 @@
+# couples-app. Copy .env.example to .env, paste a Tailscale auth key, then:
+#   docker compose up -d
+# and open https://couples.<your-tailnet>.ts.net from any device on your tailnet.
+#
+# The app shares the tailscale container's network and publishes no port, so
+# nothing off your tailnet can reach it — not even your own LAN. The app has
+# no login; your tailnet is the login.
+services:
+  ts:
+    image: tailscale/tailscale:stable
+    hostname: ${TS_HOSTNAME:-couples}
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:?set TS_AUTHKEY in .env}
+      TS_HOSTNAME: ${TS_HOSTNAME:-couples}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_SERVE_CONFIG: /config/serve.json
+      TS_USERSPACE: "true"
+    configs:
+      - source: ts-serve
+        target: /config/serve.json
+    volumes:
+      - ts-state:/var/lib/tailscale
+    restart: unless-stopped
+
+  app:
+    image: ghcr.io/rationislabs/couples-app:${COUPLES_VERSION:-latest}
+    network_mode: service:ts
+    depends_on: [ts]
+    environment:              # the app gets only the keys it uses; TS_AUTHKEY stays with ts
+      - TMDB_API_KEY
+      - TMDB_READ_TOKEN
+      - SPOTIFY_CLIENT_ID
+      - SPOTIFY_CLIENT_SECRET
+      - SPOTIFY_REDIRECT_URI
+      - SPOTIFY_REFRESH_TOKEN
+      - LASTFM_API_KEY
+      - TZ
+      - LEDGER_BACKUP_AT
+      - LEDGER_BACKUP_KEEP
+    volumes:
+      - data:/data
+      - backups:/backups      # point this at a second disk or a synced folder
+    restart: unless-stopped
+
+configs:
+  ts-serve:
+    content: |
+      {"TCP": {"443": {"HTTPS": true}},
+       "Web": {"$${TS_CERT_DOMAIN}:443": {"Handlers": {"/": {"Proxy": "http://127.0.0.1:3000"}}}}}
+
+volumes:
+  ts-state:
+  data:
+  backups:

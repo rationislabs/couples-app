@@ -24,17 +24,23 @@ RUN REFLEX_FRONTEND_PORT=3000 REFLEX_BACKEND_PORT=3000 \
  && rm -rf .web/node_modules
 
 FROM python:3.12-slim
+ARG LEDGER_VERSION=dev
 RUN apt-get update \
  && apt-get install -y --no-install-recommends tzdata \
  && rm -rf /var/lib/apt/lists/* \
  && useradd --uid 10001 --create-home app
 COPY --from=build --chown=app:app /app /app
-ENV VIRTUAL_ENV=/app/ledger_app/.venv PATH=/app/ledger_app/.venv/bin:$PATH REFLEX_ENV_MODE=prod
+ENV VIRTUAL_ENV=/app/ledger_app/.venv PATH=/app/ledger_app/.venv/bin:$PATH REFLEX_ENV_MODE=prod \
+    LEDGER_DATA_DIR=/data LEDGER_BACKUP_DIR=/backups LEDGER_BACKUP_SCHEDULE=1 \
+    LEDGER_VERSION=$LEDGER_VERSION TZ=UTC
+RUN mkdir -p /data /backups && chown app:app /data /backups
 WORKDIR /app/ledger_app
 # Runtime writes (docker diff, 2026-10-05, after GET / and /ping only): .pyc files
 # under /app (__pycache__; PYTHONDONTWRITEBYTECODE=1 would stop them) and
 # /app/ledger_app/.web/backend/upload_is_used. Not exercised: ledger.db and
 # .states appear only once pages use state and the database.
 USER app
+VOLUME ["/data", "/backups"]
 EXPOSE 3000
-CMD ["python", "-m", "ledger_app.serve"]
+ENTRYPOINT ["/app/docker/entrypoint.sh"]
+CMD ["serve"]

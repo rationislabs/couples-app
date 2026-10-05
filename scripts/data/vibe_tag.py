@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import pathlib
 import re
 import sys
@@ -65,6 +66,8 @@ STOP_TAGS = {
 
 
 def env(key: str) -> str:
+    if v := os.environ.get(key):
+        return v
     f = HERE / ".env"
     if f.exists():
         for line in f.read_text(encoding="utf-8").splitlines():

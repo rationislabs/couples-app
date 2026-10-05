@@ -1,0 +1,9 @@
+# Test only. Publishes the app on the host loopback, port 3300, and skips
+# Tailscale. compose.yml, the file users run, publishes nothing.
+services:
+  app:
+    image: ${IMAGE:-couples-app:test}
+    environment:
+      LEDGER_BIND_HOST: 0.0.0.0
+    ports:
+      - "127.0.0.1:3300:3000"

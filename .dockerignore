@@ -1,0 +1,17 @@
+.git
+.github
+**/.venv
+**/.web
+**/__pycache__
+**/.states
+**/*.egg-info
+**/reflex.log
+ledger_app/ledger.db*
+backups
+gallery
+json
+csv
+places-inbox.txt
+.env
+.env.*
+!.env.example

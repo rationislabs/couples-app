@@ -5,14 +5,13 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
       - run: |
           uv venv ledger_app/.venv --python 3.12
           VIRTUAL_ENV=ledger_app/.venv uv pip install -r ledger_app/requirements.txt
@@ -22,21 +21,28 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: test
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - id: v
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
       # One build: the image that passes the smoke test is the image pushed.
+      # The version comes from the tag name, so it reaches the shell through
+      # env, never through ${{ }} inside the script.
       - run: |
           docker build --platform linux/amd64 \
-            --build-arg LEDGER_VERSION=${{ steps.v.outputs.version }} \
-            -t ghcr.io/rationislabs/couples-app:${{ steps.v.outputs.version }} \
+            --build-arg LEDGER_VERSION="$VERSION" \
+            -t "ghcr.io/rationislabs/couples-app:$VERSION" \
             -t ghcr.io/rationislabs/couples-app:latest .
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
       - run: tests/test_image.sh
         env:
           IMAGE: ghcr.io/rationislabs/couples-app:${{ steps.v.outputs.version }}
           SKIP_BUILD: "1"
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

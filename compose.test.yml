@@ -5,6 +5,9 @@ services:
     image: ${IMAGE:-couples-app:test}
     environment:
       LEDGER_BIND_HOST: 0.0.0.0
+    # Runs as uid 10001 and never needs root powers: drop them all.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     ports:
       - "127.0.0.1:3300:3000"
     volumes:

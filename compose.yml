@@ -41,6 +41,9 @@ services:
       - data:/data
       - backups:/backups      # point this at a second disk or a synced folder
     restart: unless-stopped
+    # Runs as uid 10001 and never needs root powers: drop them all.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
 
 configs:
   ts-serve:

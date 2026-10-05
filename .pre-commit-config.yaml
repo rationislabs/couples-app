@@ -1,0 +1,8 @@
+# Blocks a commit that adds a secret (API key, bot token, private key).
+#   uv tool install pre-commit==4.0.1 && pre-commit install
+# (pinned: later pre-commit releases need git 2.31 or newer)
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e # v8.30.1
+    hooks:
+      - id: gitleaks

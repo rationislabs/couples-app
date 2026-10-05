@@ -32,11 +32,12 @@ import zipfile
 
 from sqlmodel import Session, create_engine, select      # noqa: E402
 from ledger_app.core.models import Place                      # noqa: E402
+from ledger_app.core.paths import db_path, json_dir           # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parents[2]
-ENGINE = create_engine(f"sqlite:///{HERE / 'ledger_app' / 'ledger.db'}")
+ENGINE = create_engine(f"sqlite:///{db_path()}")
 INBOX = HERE / "places-inbox.txt"
-COUNTRIES = HERE / "json" / "place-countries.json"   # list name -> ISO-2
+COUNTRIES = json_dir() / "place-countries.json"   # list name -> ISO-2
 TAKEOUT = HERE / "takeout"                  # where every export lives
 DOWNLOADS = pathlib.Path("~/Downloads").expanduser()
 APPLY = "--apply" in sys.argv

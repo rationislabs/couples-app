@@ -31,11 +31,12 @@ from collections import Counter
 
 from sqlmodel import Session, create_engine, select      # noqa: E402
 from ledger_app.core.models import Playlist, PlaylistTrack, Track   # noqa: E402
+from ledger_app.core.paths import db_path, json_dir  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parents[2]
-ENGINE = create_engine(f"sqlite:///{HERE / 'ledger_app' / 'ledger.db'}")
-CACHE = HERE / "json" / "lastfm-cache.json"
-CACHE.parent.mkdir(exist_ok=True)       # json/ is gitignored, so absent on a clone
+ENGINE = create_engine(f"sqlite:///{db_path()}")
+CACHE = json_dir() / "lastfm-cache.json"
+CACHE.parent.mkdir(parents=True, exist_ok=True)     # json/ is gitignored, so absent on a clone
 API = "https://ws.audioscrobbler.com/2.0/"
 APPLY = "--apply" in sys.argv
 TOP_TAGS = 8          # per track; beyond this the tail is noise

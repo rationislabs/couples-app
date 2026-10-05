@@ -25,15 +25,16 @@ import difflib, json, pathlib, re, sys, time, urllib.parse, urllib.request
 
 from sqlmodel import Session, create_engine, select
 from ledger_app.core.models import Genre, Title, TitleGenre  # noqa: E402
+from ledger_app.core.paths import db_path, json_dir  # noqa: E402
 
 APP = pathlib.Path(__file__).resolve().parents[2] / "ledger_app"
-ENGINE = create_engine(f"sqlite:///{APP / 'ledger.db'}")
+ENGINE = create_engine(f"sqlite:///{db_path()}")
 APPLY = "--apply" in sys.argv
 REVIEW_ONLY = "--review" in sys.argv
 CAP = 300
-CACHE = APP.parent / "json" / "tmdb-cache.json"     # saves repeat API calls
-AMBIG = APP.parent / "json" / "tmdb-ambiguous.json"  # candidates the app asks you to pick from
-CACHE.parent.mkdir(exist_ok=True)                   # json/ is gitignored, so absent on a clone
+CACHE = json_dir() / "tmdb-cache.json"     # saves repeat API calls
+AMBIG = json_dir() / "tmdb-ambiguous.json"  # candidates the app asks you to pick from
+CACHE.parent.mkdir(parents=True, exist_ok=True)                 # json/ is gitignored, so absent on a clone
 
 def load_cache() -> dict:
     return json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}

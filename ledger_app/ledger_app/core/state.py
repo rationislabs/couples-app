@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import os
-import pathlib
 import sys
 from datetime import date, datetime
 
@@ -22,10 +21,9 @@ from . import verdicts as V
 from . import inline as IN
 from .models import Genre, ListDef, Membership, Title, TitleGenre, WatchState, Progress
 
-# core/ sits one level deeper than the package root, so this is
-# ledger_app/ (where ledger.db lives), not the package directory.
-APP = pathlib.Path(__file__).resolve().parents[2]
-ENGINE = create_engine(f"sqlite:///{APP / 'ledger.db'}")
+from .paths import db_path
+
+ENGINE = create_engine(f"sqlite:///{db_path()}")
 
 
 # ---------------------------------------------------------------------------

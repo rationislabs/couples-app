@@ -33,10 +33,11 @@ from geopy.geocoders import Nominatim
 from sqlmodel import Session, create_engine, select
 
 from ledger_app.core.models import Place              # noqa: E402
+from ledger_app.core.paths import db_path  # noqa: E402
 from ledger_app.core.place_types import classify       # noqa: E402
 
 APP = pathlib.Path(__file__).resolve().parents[2] / "ledger_app"
-ENGINE = create_engine(f"sqlite:///{APP / 'ledger.db'}")
+ENGINE = create_engine(f"sqlite:///{db_path()}")
 
 USER_AGENT = "media-ledger-personal/1.0 (single-user hobby project)"
 

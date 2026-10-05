@@ -9,6 +9,13 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
+# alembic.ini carries a placeholder URL. `reflex db migrate` passes its own;
+# a plain `alembic upgrade head` (the container, the tests) gets the same
+# database the app opens.
+if config.get_main_option("sqlalchemy.url", "").startswith("driver://"):
+    from ledger_app.core.paths import db_path
+    config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path()}")
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:

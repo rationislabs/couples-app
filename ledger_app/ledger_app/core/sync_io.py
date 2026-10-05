@@ -12,12 +12,12 @@ from sqlmodel import create_engine
 
 # core/ sits one level deeper than the package root, so this is
 # ledger_app/ (where ledger.db lives), not the package directory.
-APP = pathlib.Path(__file__).resolve().parents[2]
-ROOT = APP.parent                 # the repo root, and the cwd every script wants
-DATA = ROOT / "json"              # API caches, nothing executable
-DATA.mkdir(exist_ok=True)         # gitignored, so absent on a fresh clone
+from .paths import APP, ROOT, db_path, json_dir
+
+DATA = json_dir()                 # API caches, nothing executable
+DATA.mkdir(parents=True, exist_ok=True)   # gitignored, so absent on a fresh clone
 SCRIPTS = ROOT / "scripts"        # import/ seed/ data/ ops/
-ENGINE = create_engine(f"sqlite:///{APP / 'ledger.db'}")
+ENGINE = create_engine(f"sqlite:///{db_path()}")
 
 
 def run(cmd: list[str], cwd: pathlib.Path, timeout: int = 900) -> tuple[bool, str]:

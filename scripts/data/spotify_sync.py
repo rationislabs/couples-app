@@ -30,10 +30,11 @@ from datetime import datetime
 
 from sqlmodel import Session, create_engine, delete, select   # noqa: E402
 from ledger_app.core.models import Playlist, PlaylistTrack, Track  # noqa: E402
+from ledger_app.core.paths import db_path  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parents[2]
 ENV = HERE / ".env"
-ENGINE = create_engine(f"sqlite:///{HERE / 'ledger_app' / 'ledger.db'}")
+ENGINE = create_engine(f"sqlite:///{db_path()}")
 APPLY = "--apply" in sys.argv
 API = "https://api.spotify.com/v1"
 

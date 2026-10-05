@@ -1,45 +1,15 @@
-import json as _json
 import os as _os
-import pathlib as _pathlib
-import subprocess as _subprocess
 
 import reflex as rx
 
-# Uploads land in gallery/ at the repo root. Set here rather than in
+from ledger_app.core.paths import db_path as _db_path, gallery_dir as _gallery_dir
+
+# Uploads land in gallery/ (under LEDGER_DATA_DIR when set). Set here rather than in
 # ledger.sh so `reflex run` started any other way agrees about where photos live.
 # setdefault, so an explicit REFLEX_UPLOADED_FILES_DIR still wins. Reflex reads
 # this at call time and mounts it at /_upload when the app is built, which is
 # after this file is imported. gallery/ is gitignored and backed up nightly.
-_os.environ.setdefault(
-    "REFLEX_UPLOADED_FILES_DIR",
-    str(_pathlib.Path(__file__).resolve().parent.parent / "gallery"))
-
-
-def _local_tailnet_name() -> str:
-    """This machine's own tailnet DNS name, or "" if it cannot be determined.
-
-    Hardcoding one host here is correct on exactly one machine and wrong on
-    every other, and it fails as a silent 403 from Vite that reads like a
-    tailscale or `serve` fault rather than a config one. Ask tailscale instead.
-
-    LEDGER_ALLOWED_HOST still wins, for the case where the app is reached under
-    a name tailscale does not report (a MagicDNS alias, a reverse proxy).
-
-    Never raises and never blocks for long: a missing binary, a stopped daemon
-    or a hung query all degrade to "", which leaves the app reachable on
-    loopback only. That is the fail-closed direction for an app with no login.
-    """
-    override = _os.environ.get("LEDGER_ALLOWED_HOST")
-    if override:
-        return override
-    try:
-        out = _subprocess.run(
-            ["tailscale", "status", "--json"],
-            capture_output=True, text=True, timeout=2, check=True,
-        ).stdout
-        return _json.loads(out)["Self"]["DNSName"].rstrip(".")
-    except Exception:
-        return ""
+_os.environ.setdefault("REFLEX_UPLOADED_FILES_DIR", str(_gallery_dir()))
 
 # Loopback binding.
 #
@@ -65,7 +35,7 @@ def _local_tailnet_name() -> str:
 
 config = rx.Config(
     app_name="ledger_app",
-    db_url="sqlite:///ledger.db",
+    db_url=f"sqlite:///{_db_path()}",
     # the API half of the same problem; the default is 0.0.0.0
     backend_host="127.0.0.1",
     # Pin both ports. Unpinned, Reflex probes for a free port at startup while
@@ -84,9 +54,10 @@ config = rx.Config(
     # which is what `tailscale serve` gets when it proxies the tailnet hostname
     # to 127.0.0.1:3000. Named explicitly rather than True: True accepts any
     # Host, which re-opens DNS rebinding against an app that has no login.
-    # Derived per-machine; set LEDGER_ALLOWED_HOST to override.
+    # The tailnet name comes only from LEDGER_ALLOWED_HOST, and only matters in
+    # dev mode (prod serves no Vite).
     vite_allowed_hosts=[
-        h for h in (_local_tailnet_name(), "localhost", "127.0.0.1") if h
+        h for h in (_os.environ.get("LEDGER_ALLOWED_HOST", ""), "localhost", "127.0.0.1") if h
     ],
     show_built_with_reflex=False,
     plugins=[

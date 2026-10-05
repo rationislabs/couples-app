@@ -9,7 +9,8 @@ import sys
 
 from sqlmodel import Session, select                              # noqa: E402
 
-from ledger_app.pages.home import HOME_AT, MOOD_TYPES, HomeState        # noqa: E402
+from ledger_app.pages.home import MOOD_TYPES, HomeState        # noqa: E402
+from ledger_app.core import household as H                      # noqa: E402
 from ledger_app.core.models import (ConvoQuestion, CookLog, DateEntry,  # noqa: E402
                                Place, WatchState)
 from ledger_app.core.state import ENGINE                                # noqa: E402
@@ -20,7 +21,8 @@ def seed() -> list[tuple[type, int]]:
     outfit has something to change between. Enough for every check on an empty
     database. Returns (model, id) pairs, for cleanup by id."""
     from ledger_app.core.models import Garment
-    lat, lon = HOME_AT
+    H.set_home((48.2082, 16.3738))   # the radius checks need somewhere to measure from
+    lat, lon = H.home()
     rows = [Place(name="zz-home-test near", city="zz-city-a", tags="restaurant",
                   lat=lat, lon=lon, maps_url="https://example.com/"),
             Place(name="zz-home-test far", city="zz-city-b", tags="park",

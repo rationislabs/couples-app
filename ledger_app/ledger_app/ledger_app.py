@@ -16,6 +16,8 @@ from .pages import books as BK
 from .pages import recipes as R
 from .pages import household as HH
 from .core import verdicts as V
+from .core.profile import ProfileState
+from .pages import setup as SU
 from .core import inline as IN
 from .core.ui import ACCENT, chip, choice_row, filter_row, navbar, themed, notice_toast, pager
 
@@ -488,8 +490,12 @@ app = rx.App(stylesheets=["/ledger.css"],
 
 
 def themed_page(component, route, **kw):
-    """add_page, with the room and page classes on it."""
-    app.add_page(themed(component, route), route=route, **kw)
+    """add_page, with the room and page classes on it, and the setup gate as
+    the first on_load: fresh names for the header, and /setup until done."""
+    loads = kw.pop("on_load", [])
+    loads = loads if isinstance(loads, list) else [loads]
+    app.add_page(themed(component, route), route=route,
+                 on_load=[ProfileState.gate(route), *loads], **kw)
 
 
 themed_page(index, route="/library", title="Media Library Ledger",
@@ -521,3 +527,6 @@ themed_page(BK.page, route="/books", title="Books",
             on_load=BK.BookState.load)
 themed_page(H.page, route="/", title="Tonight",
             on_load=[H.HomeState.load, H.GL.GalleryState.load])
+themed_page(SU.setup_page, route="/setup", title="Setup", on_load=SU.SetupState.load)
+themed_page(SU.settings_page, route="/settings", title="Settings",
+            on_load=SU.SetupState.load)

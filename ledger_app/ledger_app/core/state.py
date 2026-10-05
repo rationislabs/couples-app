@@ -47,18 +47,6 @@ def _sqlite_pragmas(dbapi_connection, _record):
     cur.execute("PRAGMA synchronous=NORMAL")    # safe under WAL, much faster
     cur.close()
 
-HOME = tuple(
-    float(x) for x in os.environ.get("LEDGER_HOME_LATLON", "0,0")
-    .split(",")
-)
-"""Where distances are measured from, as "lat,lon".
-
-Set it in .env. The default, 0,0, is in the Gulf of Guinea, so every
-distance is obviously wrong rather than plausibly wrong. Defined once here because both the Date page and the Tonight page need it, and set
-through LEDGER_HOME_LATLON so moving house or moving machine is a variable
-rather than an edit in two files.
-"""
-
 PAGE_SIZE = 20
 MEDIA_LABELS = {"anime": "Anime", "anime-film": "Anime film", "movie": "Movie", "tv": "TV"}
 

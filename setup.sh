@@ -8,9 +8,7 @@
 #
 # Options:
 #   --db PATH     restore this backup (.gz or plain) into ledger_app/ledger.db
-#   --home LAT,LON  write LEDGER_HOME_LATLON into .env. Every distance in the
-#                 app is measured from it; unset, distances are measured
-#                 from 0,0 and are obviously wrong.
+#   --home LAT,LON  seed the home location of a new database. Without it the first-run page asks.
 #   --host NAME   write LEDGER_ALLOWED_HOST into .env. Without it Vite rejects
 #                 the request with a host error that never names the setting.
 #   --no-apt      skip the system packages
@@ -125,7 +123,7 @@ fi
 
 # --- 6. schema ---------------------------------------------------------------
 step "Migrations"
-( cd "$APP" && "$VENV/bin/reflex" db migrate )
+( cd "$APP" && LEDGER_HOME_LATLON="${HOME_LATLON:-}" "$VENV/bin/reflex" db migrate )
 # `python - <<EOF` has no __file__, so the path is an argument.
 head="$("$PY" -c '
 import sqlite3, sys
@@ -155,13 +153,8 @@ set_env() {
   fi
 }
 
-[ -n "$HOME_LATLON" ]  && set_env LEDGER_HOME_LATLON  "$HOME_LATLON"
 [ -n "$ALLOWED_HOST" ] && set_env LEDGER_ALLOWED_HOST "$ALLOWED_HOST"
 
-if ! grep -q "^LEDGER_HOME_LATLON=" "$ROOT/.env" 2>/dev/null; then
-  warn "LEDGER_HOME_LATLON is not set — every distance will be measured from"
-  warn "0,0. Re-run with --home \"lat,lon\", or add it to .env."
-fi
 if ! grep -q "^LEDGER_ALLOWED_HOST=" "$ROOT/.env" 2>/dev/null; then
   warn "LEDGER_ALLOWED_HOST is not set — Vite will reject requests to this"
   warn "box's tailnet name. Re-run with --host <name>.ts.net."

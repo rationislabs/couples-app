@@ -13,7 +13,7 @@ check "is executable"               "[ -x '$SRC' ]"
 check "refuses unknown options"     "! bash -c 'set -e; source /dev/stdin --nope' < <(sed -n \"/^while \\[ \\\$# -gt 0 \\]/,/^done/p\" '$SRC') 2>/dev/null"
 check "never overwrites an existing .env"  "grep -q 'not overwritten' '$SRC'"
 check "never overwrites an existing db"    "grep -q 'left alone' '$SRC'"
-check "warns instead of guessing the origin" "grep -q 'LEDGER_HOME_LATLON' '$SRC'"
+check "seeds the home location into the migration" "grep -q 'LEDGER_HOME_LATLON=\"\${HOME_LATLON' '$SRC'"
 check "chmods .env to 600"          "grep -q 'chmod 600' '$SRC'"
 check "uses uv pip, never bare pip" "! grep -qE '(^|[^ ])\\bpip install' '$SRC' || grep -q 'uv pip install' '$SRC'"
 # The closing heredoc *prints* those commands; it does not run them. Strip

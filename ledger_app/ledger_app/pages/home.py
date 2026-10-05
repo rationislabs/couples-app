@@ -19,12 +19,12 @@ import reflex as rx
 
 from ..core.ui import notice_toast
 from . import gallery as GL
-from geopy.distance import geodesic
 from sqlmodel import Session, select
 
 from ..core.models import (ConvoQuestion, CookLog, DateEntry, Game, Garment, Genre,
                      Place, Recipe, Title, TitleGenre, WatchState)
-from ..core.state import ENGINE, HOME as HOME_AT
+from ..core.state import ENGINE
+from ..core import household as HH
 
 
 MOODS = ["out to eat", "adventure", "culture", "stay in", "surprise us"]
@@ -68,6 +68,15 @@ class Card:
     empty: bool
 
 
+def too_far(home, km, near_only: bool, radius_km: int, mood: str) -> bool:
+    """Whether the distance filter drops a place. With no home location there
+    is nothing to measure from, so the filter is off rather than dropping
+    every place as unknown."""
+    if home is None or not (near_only and radius_km) or mood == "stay in":
+        return False
+    return km is None or km > radius_km
+
+
 class HomeState(rx.State):
     mood: str = "surprise us"
     near_only: bool = True
@@ -87,6 +96,7 @@ class HomeState(rx.State):
     _place: dict = {}
     _recipe: dict = {}
     _question: dict = {}
+    has_home: bool = False
     _watch: dict = {}
     _watch_narrowed: bool = False
     _outfit: list[dict] = []
@@ -100,6 +110,8 @@ class HomeState(rx.State):
         """Everything the page shows, read in one pass. Deliberately an event
         and not a computed var: computed vars that read the database go stale
         because Reflex only recomputes them when a tracked var changes."""
+        home = HH.home()
+        self.has_home = home is not None
         with Session(ENGINE) as s:
             places = [p for p in s.exec(select(Place)).all() if not p.dismissed]
             self._cities = sorted({p.city for p in places if p.city})
@@ -158,8 +170,7 @@ class HomeState(rx.State):
             types = [t for t in p.tags.split(",") if t]
             if wanted and not any(t in wanted for t in types):
                 continue
-            km = (geodesic(HOME_AT, (p.lat, p.lon)).km
-                  if p.lat is not None and p.lon is not None else None)
+            km = HH.distance_km(home, p.lat, p.lon)
             if self.city and (p.city or "") != self.city:
                 continue
             # > A place with no coordinates is unknown, not far away. Dropping it
@@ -172,14 +183,13 @@ class HomeState(rx.State):
             # not usable as a suggestion for tonight, whatever it is in theory.
             # A radius now means a radius; without one, unknowns are still in.
             # The real fix is geocoding: scripts/data/geocode_places.py.
-            if (self.near_only and self.radius_km and self.mood != "stay in"
-                    and (km is None or km > self.radius_km)):
+            if too_far(home, km, self.near_only, self.radius_km, self.mood):
                 continue
             pool.append({"id": p.id, "name": p.name, "url": p.maps_url,
                          "city": p.city, "country": p.country,
                          "types": ", ".join(types) or "untagged",
                          "km": f"{km:.0f} km" if km is not None
-                         else "distance unknown"})
+                         else ("distance unknown" if home else "")})
         self._place = rng.choice(pool) if pool else {}
 
         # --- something to cook, preferring one never cooked
@@ -622,14 +632,15 @@ def page() -> rx.Component:
             ),
             rx.hstack(
                 rx.foreach(HomeState.moods, _mood_chip),
-                rx.select(RADII, value=HomeState.radius_label,
-                          on_change=HomeState.set_radius, size="2",
-                          width="7.5rem"),
+                rx.cond(HomeState.has_home,
+                        rx.select(RADII, value=HomeState.radius_label,
+                                  on_change=HomeState.set_radius, size="2",
+                                  width="7.5rem")),
                 rx.select(HomeState.city_options, value=HomeState.city_label,
                           on_change=HomeState.set_city, size="2",
                           width="10rem"),
                 rx.cond(
-                    HomeState.coverage != "",
+                    (HomeState.coverage != "") & HomeState.has_home,
                     rx.text(HomeState.coverage, size="1",
                             style={"color": "var(--dim)"}),
                     rx.fragment(),

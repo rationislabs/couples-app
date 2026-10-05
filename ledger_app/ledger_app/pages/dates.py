@@ -19,8 +19,8 @@ from ..core import sync_io
 from ..core import inline as IN
 from ..core import verdicts as V
 from ..core.models import DateEntry, Place
-from ..core.state import ENGINE, HOME
-from geopy.distance import geodesic
+from ..core.state import ENGINE
+from ..core import household as HH
 
 from ..core.place_types import GROUPS, GROUP_HUE, TYPES, type_hue
 from . import travel as T
@@ -141,6 +141,7 @@ PAGE_SIZE = 25
 
 
 class DateState(rx.State):
+    has_home: bool = False
     _places: list[dict] = []
     _log: list[dict] = []
     _verdicts: dict[str, dict[str, str]] = {}
@@ -192,6 +193,8 @@ class DateState(rx.State):
 
     @rx.event
     def load(self):
+        home = HH.home()
+        self.has_home = home is not None
         with Session(ENGINE) as s:
             places = [p for p in s.exec(select(Place)).all() if not p.dismissed]
             hidden = len([1 for p in s.exec(select(Place)).all() if p.dismissed])
@@ -203,9 +206,7 @@ class DateState(rx.State):
                              "tags": p.tags, "visited": p.visited,
                              "tag_list": [t for t in p.tags.split(",") if t],
                              "city": p.city, "lat": p.lat, "lon": p.lon,
-                             "km": (round(geodesic(HOME, (p.lat, p.lon)).km, 1)
-                                    if p.lat is not None and p.lon is not None
-                                    else None)}
+                             "km": (round(km, 1) if (km := HH.distance_km(home, p.lat, p.lon)) is not None else None)}
                             for p in sorted(places, key=lambda x: x.name.lower())]
             self._log = [{"id": e.id, "date": e.went_on.isoformat(),
                           "place": names.get(e.place_id) or e.place_text or "—",
@@ -430,7 +431,7 @@ class DateState(rx.State):
         if not self.show_map:
             self.map_html = ""          # do not ship markup nobody is looking at
             return
-        self.map_html, self.map_pins = build_map(self._matches(), HOME)
+        self.map_html, self.map_pins = build_map(self._matches(), HH.home() or (0.0, 0.0))
 
     @rx.event
     def set_max_km(self, km: int):
@@ -1025,11 +1026,11 @@ def _where() -> rx.Component:
                        "flex": "0 0 4.25rem", "paddingTop": "0.18rem"}),
         rx.box(
             rx.hstack(
-                rx.foreach(DateState.radius_rows, _radius_chip),
+                rx.cond(DateState.has_home, rx.foreach(DateState.radius_rows, _radius_chip)),
                 rx.select(DateState.city_options, value=DateState.city_label,
                           size="1", on_change=DateState.set_city, width="11rem"),
-                rx.text(DateState.geo_summary, size="1",
-                        style={"color": "var(--dim)"}),
+                rx.cond(DateState.has_home,
+                        rx.text(DateState.geo_summary, size="1", style={"color": "var(--dim)"})),
                 spacing="2", align="center", wrap="wrap",
             ),
             class_name="filter-row", width="100%",

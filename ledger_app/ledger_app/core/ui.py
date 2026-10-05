@@ -182,6 +182,8 @@ def navbar(active: str) -> rx.Component:
         ),
         rx.spacer(),
         profile_toggle(),
+        rx.link(rx.icon("settings", size=18), href="/settings", aria_label="Settings",
+                class_name="nav-settings"),
         rx.text(NavState.emoji, class_name="nav-emoji"),
         rx.box(
             rx.menu.root(

@@ -34,8 +34,7 @@ Needs Linux, Python 3.12 and [uv](https://docs.astral.sh/uv/).
 `setup.sh` creates the venv, copies `.env.example` to `.env`, builds an empty
 database and runs `scripts/ops/preflight.py`. Then edit `.env`:
 
-- `LEDGER_PEOPLE`: the two people voting, e.g. `alex,sam`
-- `LEDGER_HOME_LATLON`: where distances are measured from
+- The two names and the home location: the first page asks for them, and Settings changes them later.
 - API keys, only if you use the matching importers (TMDB, Spotify, Last.fm)
 
 `./ledger.sh` also has `stop`, `restart`, `status`, `logs`, `check` (bind

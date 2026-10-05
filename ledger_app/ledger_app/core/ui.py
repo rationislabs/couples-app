@@ -7,7 +7,7 @@ from typing import Callable
 
 import reflex as rx
 
-from .profile import toggle as profile_toggle
+from .profile import ProfileState, toggle as profile_toggle
 
 ACCENT = "orange"
 
@@ -184,6 +184,10 @@ def navbar(active: str) -> rx.Component:
         profile_toggle(),
         rx.link(rx.icon("settings", size=18), href="/settings", aria_label="Settings",
                 class_name="nav-settings"),
+        rx.cond(ProfileState.backup_warning != "",
+                rx.link(ProfileState.backup_warning, href="/settings", size="1",
+                        class_name="nav-backup-warning",
+                        style={"color": "var(--vermilion)"})),
         rx.text(NavState.emoji, class_name="nav-emoji"),
         rx.box(
             rx.menu.root(

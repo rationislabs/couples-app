@@ -6,6 +6,8 @@ know who is holding the phone. The header toggle switches in one tap, because
 one phone shared by both people is a supported case. This is the honour
 system, on purpose.
 """
+from datetime import datetime
+
 import reflex as rx
 
 from . import household as H
@@ -15,11 +17,13 @@ class ProfileState(rx.State):
     me: str = rx.LocalStorage("", name="couples_me", sync=True)
     names: dict[str, str] = {s: "" for s in H.SLOTS}
     initials: dict[str, str] = {s: s for s in H.SLOTS}
+    backup_warning: str = ""
 
     @rx.event
     def load(self):
         self.names = H.names()
         self.initials = {s: (n[:1].upper() or s) for s, n in self.names.items()}
+        self.backup_warning = H.backup_warning(datetime.now())
         if self.me not in H.SLOTS:     # cleared, or a value from an older build
             self.me = ""
 

@@ -188,6 +188,54 @@ def restore(gz: pathlib.Path, db: pathlib.Path) -> pathlib.Path:
     return aside
 
 
+def seconds_until(at: str, now: datetime) -> float:
+    """Seconds from `now` to the next HH:MM. Exactly HH:MM means tomorrow."""
+    hour, minute = (int(x) for x in at.split(":"))
+    target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if target <= now:
+        target += timedelta(days=1)
+    return (target - now).total_seconds()
+
+
+def due_at_start(db: pathlib.Path, now: datetime) -> bool:
+    """A backup at start-up when the last one failed, never ran, or is over a
+    day old: covers a fresh install and a machine that was off at 03:30."""
+    try:
+        with closing(sqlite3.connect(f"file:{db}?mode=ro", uri=True)) as con:
+            at, ok = con.execute(
+                "select last_backup_at, last_backup_ok from household where id = 1").fetchone()
+        return not ok or at is None or now - datetime.fromisoformat(at) > timedelta(hours=24)
+    except (sqlite3.Error, TypeError, ValueError):
+        return True
+
+
+def backup_at() -> str:
+    """LEDGER_BACKUP_AT when it is a valid HH:MM, else 03:30 with a warning, so
+    a typo cannot kill the loop."""
+    v = os.environ.get("LEDGER_BACKUP_AT", "03:30")
+    try:
+        h, m = v.split(":")
+        if len(h) == 2 and len(m) == 2 and 0 <= int(h) <= 23 and 0 <= int(m) <= 59:
+            return v
+    except ValueError:
+        pass
+    print(f"LEDGER_BACKUP_AT={v!r} is not HH:MM; using 03:30")
+    return "03:30"
+
+
+async def nightly_loop() -> None:
+    """Lifespan task. Runs only when LEDGER_BACKUP_SCHEDULE=1, which the image
+    sets, so a host install keeps its own systemd timer instead of backing up
+    twice. One backend worker (no Redis) means one loop."""
+    if os.environ.get("LEDGER_BACKUP_SCHEDULE") != "1":
+        return
+    if due_at_start(paths.db_path(), datetime.now()):
+        print((await asyncio.to_thread(nightly))[1])
+    while True:
+        await asyncio.sleep(seconds_until(backup_at(), datetime.now()))
+        print((await asyncio.to_thread(nightly))[1])
+
+
 def main(argv: list[str]) -> int:
     cmd = argv[0] if argv else "backup"
     try:

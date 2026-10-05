@@ -7,12 +7,11 @@ control behaves identically wherever it appears.
 Nothing here knows about a page. A caller passes `kind` and a row id and gets
 back a pair of controls; that is the whole interface.
 """
-import os
-
 import reflex as rx
 from sqlmodel import Session, select
 
 from .models import Verdict
+from .household import SLOTS
 from .ui import choice_row
 
 def _engine():
@@ -27,10 +26,10 @@ def _engine():
     return ENGINE
 
 
-# The people voting, named once in .env: LEDGER_PEOPLE="alex,sam". They are
-# the keys stored in verdict.person, so renaming one orphans their votes.
-PEOPLE = [p.strip().lower() for p in
-          os.environ.get("LEDGER_PEOPLE", "me,you").split(",") if p.strip()]
+# The two slots, "1" and "2" — user ids. Names live in the user table and
+# reach components through ProfileState (core/profile.py), so renaming a
+# person is a database write and keeps every vote.
+PEOPLE = SLOTS
 
 UP, MID, DOWN = "up", "mid", "down"
 VALUES = [UP, MID, DOWN]
@@ -47,7 +46,7 @@ def read(kind: str, row_ids: list[int]) -> dict[int, dict[str, str]]:
         rows = s.exec(select(Verdict).where(Verdict.kind == kind)).all()
     for v in rows:
         if v.row_id in out:
-            out[v.row_id][v.person] = v.value
+            out[v.row_id][str(v.user_id)] = v.value
     return out
 
 
@@ -60,12 +59,13 @@ def write(kind: str, row_id: int, person: str, value: str) -> None:
     """
     if person not in PEOPLE or value not in VALUES:
         return
+    uid = int(person)
     with Session(_engine()) as s:
         row = s.exec(select(Verdict).where(
             Verdict.kind == kind, Verdict.row_id == row_id,
-            Verdict.person == person)).first()
+            Verdict.user_id == uid)).first()
         if row is None:
-            s.add(Verdict(person=person, kind=kind, row_id=row_id, value=value))
+            s.add(Verdict(user_id=uid, kind=kind, row_id=row_id, value=value))
         elif row.value == value:
             s.delete(row)
         else:
@@ -79,13 +79,13 @@ def agreed(verdicts: dict[str, str]) -> bool:
     return all(verdicts.get(p) == UP for p in PEOPLE)
 
 
-def summarise(verdicts: dict[str, str]) -> str:
+def summarise(verdicts: dict[str, str], names: dict[str, str]) -> str:
     if agreed(verdicts):
         return "both yes"
     said = [p for p in PEOPLE if verdicts.get(p)]
     if not said:
         return ""
-    return " · ".join(f"{p[0].upper()}{GLYPH[verdicts[p]]}" for p in said)
+    return " · ".join(f"{(names.get(p) or p)[:1].upper()}{GLYPH[verdicts[p]]}" for p in said)
 
 
 def control(verdicts, on_click) -> rx.Component:

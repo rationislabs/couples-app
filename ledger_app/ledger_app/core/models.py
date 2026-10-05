@@ -16,11 +16,23 @@ from sqlmodel import Field, SQLModel
 
 
 class User(SQLModel, table=True):
-    """A person using the ledger."""
+    """One of the two people. Ids 1 and 2 are the app's two slots; the
+    people-as-ids migration and /setup keep exactly those two rows."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    display_name: str
-    email: str = ""
+    display_name: str = ""
     is_admin: bool = False
+
+
+class Household(SQLModel, table=True):
+    """The one row of settings that are not secrets. Secrets stay in .env so
+    no backup ever carries one. Read and written only through core/household.py."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    home_lat: Optional[float] = None
+    home_lon: Optional[float] = None
+    setup_done: bool = False
+    last_backup_at: Optional[datetime] = None
+    last_backup_ok: Optional[bool] = None
+    last_backup_error: str = ""
 
 
 class Verdict(SQLModel, table=True):
@@ -41,11 +53,11 @@ class Verdict(SQLModel, table=True):
     """
     # One verdict per person per row.
     __table_args__ = (
-        Index("ix_verdict_unique", "person", "kind", "row_id", unique=True),
+        Index("ix_verdict_unique", "user_id", "kind", "row_id", unique=True),
     )
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    person: str = Field(index=True)                 # display name, lowercased
+    user_id: int = Field(index=True)                 # 1 or 2, the two slots
     kind: str = Field(index=True)                   # title|idea|recipe|game|place
     row_id: int = Field(index=True)
     value: str = ""                                 # up|mid|down
@@ -388,7 +400,7 @@ class Garment(SQLModel, table=True):
     """
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    owner: str = Field(default="", index=True)      # a name from LEDGER_PEOPLE, or ""
+    owner_id: Optional[int] = None                  # 1 or 2, or None for shared
     slot: str = Field(default="top", index=True)    # top|bottom|outer|shoes|accent
     season: str = ""                                # ""=any | warm | cold
     formality: str = ""                             # ""=any | casual | smart

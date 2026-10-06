@@ -11,6 +11,10 @@ updates:
     directory: /ledger_app
     schedule:
       interval: weekly
+    ignore:
+      # requirements.txt: 0.0.47 rejects naive datetimes, which every model stores
+      - dependency-name: sqlmodel
+        versions: [">=0.0.47"]
     groups:
       python:
         patterns: ["*"]

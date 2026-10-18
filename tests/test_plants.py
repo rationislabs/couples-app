@@ -67,6 +67,12 @@ def test_due_counts_forward_and_backward():
         "a plant with no interval must not look urgent"
 
 
+def test_an_interval_never_watered_is_due_now():
+    pid = make(name="zz-test-never", water_days=7)
+    r = row_for(fresh(), pid)
+    assert r.overdue and r.due == "never watered — water now", r.due
+
+
 def test_light_fit_flags_a_dark_room():
     dark = make(name="zz-test-dark", room="bathroom",
                 light_need="bright direct")          # bathroom is low
@@ -153,6 +159,7 @@ def test_a_human_override_beats_every_derived_signal():
 if __name__ == "__main__":
     try:
         for fn in (test_due_counts_forward_and_backward,
+                   test_an_interval_never_watered_is_due_now,
                    test_light_fit_flags_a_dark_room,
                    test_watering_clears_overdue_and_counts,
                    test_wishlist_is_separate_and_acquirable,

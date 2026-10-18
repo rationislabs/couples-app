@@ -47,9 +47,9 @@ def _apartment_map() -> rx.Component:
 
 # Order is by how often a thing needs doing, not alphabetical: a plant wants
 # water weekly, a trip happens once a year.
-SECTIONS = [("plants", "Plants", PL.section, PL.PlantState.load),
-            ("shops", "Shopping", SH.section, SH.ShopState.load),
-            ("games", "Games", G.section, G.GameState.load)]
+SECTIONS = [("plants", "Plants", PL.section),
+            ("shops", "Shopping", SH.section),
+            ("games", "Games", G.section)]
 
 
 def page() -> rx.Component:
@@ -62,9 +62,8 @@ def page() -> rx.Component:
                    class_name="household-section"),
             *[rx.box(section(), id=anchor, width="100%",
                      class_name="household-section")
-              for anchor, _, section, _ in SECTIONS],
+              for anchor, _, section in SECTIONS],
             spacing="6", width="100%", align="start",
         ),
         size="4",
-        on_mount=[load for *_, load in SECTIONS],
     )

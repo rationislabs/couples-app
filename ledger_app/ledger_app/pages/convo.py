@@ -523,5 +523,4 @@ def page() -> rx.Component:
             spacing="4", width="100%", align="start",
         ),
         size="4",
-        on_mount=ConvoState.load,
     )

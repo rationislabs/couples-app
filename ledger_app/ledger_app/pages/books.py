@@ -475,5 +475,4 @@ def page() -> rx.Component:
 
         aside=rx.text(BookState.summary, size="1", class_name="tnum",
                       style={"color": "var(--dim)"}),
-        on_mount=BookState.load,
     )

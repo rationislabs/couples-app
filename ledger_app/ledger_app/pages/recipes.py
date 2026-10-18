@@ -657,6 +657,11 @@ class RecipeState(rx.State):
         self.week_offset += by
         self.load_plan()
 
+    @rx.event
+    def this_week(self):
+        self.week_offset = 0
+        self.load_plan()
+
     def _slot_row(self, s, day: dt.date, slot: str) -> MealPlan:
         row = s.exec(select(MealPlan).where(MealPlan.day == day)
                      .where(MealPlan.slot == slot)).first()
@@ -1013,7 +1018,7 @@ def planner() -> rx.Component:
                 rx.text(RecipeState.week_label, size="2", weight="medium"),
                 rx.button("›", on_click=RecipeState.shift_week(1), size="1",
                           variant="outline"),
-                rx.button("This week", on_click=RecipeState.shift_week(0), size="1",
+                rx.button("This week", on_click=RecipeState.this_week, size="1",
                           variant="ghost"),
                 spacing="2", align="center",
             ),

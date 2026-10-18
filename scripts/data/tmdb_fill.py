@@ -44,7 +44,7 @@ def genre_maps() -> dict[int, str]:
     for kind in ("movie", "tv"):
         url = f"https://api.themoviedb.org/3/genre/{kind}/list?language=en"
         req = urllib.request.Request(url, headers={
-            "Authorization": f"Bearer {TOKEN}", "accept": "application/json"})
+            "Authorization": f"Bearer {token()}", "accept": "application/json"})
         with urllib.request.urlopen(req, timeout=20) as r:
             for g in json.load(r).get("genres", []):
                 out[g["id"]] = g["name"]
@@ -59,7 +59,6 @@ def token() -> str:
             return line.split("=", 1)[1].strip()
     sys.exit("no TMDB_READ_TOKEN in the environment or .env")
 
-TOKEN = token()
 GENRES: dict[int, str] = {}
 norm = lambda s: re.sub(r"[^a-z0-9]", "", s.lower())
 strip_year = lambda s: re.sub(r"\s*\(\d{4}\)\s*$", "", s)
@@ -67,7 +66,7 @@ strip_year = lambda s: re.sub(r"\s*\(\d{4}\)\s*$", "", s)
 def _hit(path: str, **params) -> list[dict]:
     url = f"https://api.themoviedb.org/3{path}?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={
-        "Authorization": f"Bearer {TOKEN}", "accept": "application/json"})
+        "Authorization": f"Bearer {token()}", "accept": "application/json"})
     with urllib.request.urlopen(req, timeout=20) as r:
         return json.load(r).get("results", [])
 
@@ -215,6 +214,7 @@ def dates_pass() -> None:
 
 
 def main() -> None:
+    token()  # fail before any work; a hand pick from the app needs no token
     global GENRES
     GENRES = genre_maps()
     print(f"TMDB genre vocabulary: {len(GENRES)} genres")

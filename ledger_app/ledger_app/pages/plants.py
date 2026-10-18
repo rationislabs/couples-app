@@ -158,8 +158,10 @@ class PlantState(rx.State):
 
     @staticmethod
     def _due_days(p: Plant, today: dt.date) -> int | None:
-        if not p.water_days or not p.last_watered:
+        if not p.water_days:
             return None
+        if not p.last_watered:
+            return 0  # an interval with no watering logged is due now, not "no schedule"
         return p.water_days - (today - p.last_watered).days
 
     @staticmethod
@@ -208,7 +210,7 @@ class PlantState(rx.State):
             elif d < 0:
                 due, overdue = f"overdue by {-d}d", True
             elif d == 0:
-                due, overdue = "today", True
+                due, overdue = ("today" if r["last_watered"] else "never watered — water now"), True
             else:
                 due, overdue = f"in {d}d", False
             out.append(PlantRow(

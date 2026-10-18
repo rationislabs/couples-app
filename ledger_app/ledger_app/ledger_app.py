@@ -480,7 +480,6 @@ def index() -> rx.Component:
             spacing="4", width="100%",
         ),
         size="4", padding="1.5rem",
-        on_mount=LedgerState.load,
     )
 
 
@@ -508,13 +507,13 @@ themed_page(R.detail, route="/recipes/[slug]", title="Recipe",
             on_load=[RecipeState.load, RecipeState.load_detail])
 themed_page(R.planner, route="/meal-plan", title="Meal plan",
             on_load=[RecipeState.load, RecipeState.load_plan])
-themed_page(D.page, route="/dates", title="Date Tracking", on_load=D.DateState.load)
+themed_page(D.page, route="/dates", title="Date Tracking",
+            on_load=[D.DateState.load, T.TravelState.load])
 themed_page(M.page, route="/music", title="Music", on_load=M.MusicState.load)
 themed_page(C.page, route="/convo", title="Conversation",
             on_load=C.ConvoState.load)
 themed_page(HH.page, route="/household", title="Household",
-            on_load=[PL.PlantState.load, SH.ShopState.load,
-                     G.GameState.load, T.TravelState.load])
+            on_load=[PL.PlantState.load, SH.ShopState.load, G.GameState.load])
 
 # Four routes were folded into /household. They still resolve, because
 # a phone has them bookmarked; the anchor lands on the right section.

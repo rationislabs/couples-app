@@ -670,7 +670,7 @@ class LedgerState(rx.State):
     def amb_pick(self, i: int):
         """Apply one candidate through tmdb_fill's own writer, so a hand pick and
         an automatic match land identically — database and cache together."""
-        sys.path.insert(0, str(sync_io.APP))
+        sys.path.insert(0, str(sync_io.SCRIPTS / "data"))
         from tmdb_fill import write_picked
 
         name, cands = self.amb_name, self.amb_candidates

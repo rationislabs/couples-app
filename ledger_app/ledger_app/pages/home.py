@@ -25,6 +25,7 @@ from ..core.models import (ConvoQuestion, CookLog, DateEntry, Game, Garment, Gen
                      Place, Recipe, Title, TitleGenre, WatchState)
 from ..core.state import ENGINE
 from ..core import household as HH
+from ..core import verdicts as V
 
 
 MOODS = ["out to eat", "adventure", "culture", "stay in", "surprise us"]
@@ -68,6 +69,14 @@ class Card:
     empty: bool
 
 
+def voted(kind: str, rows: list, rid=lambda r: r["id"]) -> list:
+    """The pool after your votes: a row either of you voted down is never dealt,
+    and one you both voted up is dealt three times as often as the rest."""
+    votes = V.read(kind, [rid(r) for r in rows])
+    keep = [r for r in rows if V.DOWN not in votes.get(rid(r), {}).values()]
+    return keep + [r for r in keep if V.agreed(votes.get(rid(r), {}))] * 2
+
+
 def too_far(home, km, near_only: bool, radius_km: int, mood: str) -> bool:
     """Whether the distance filter drops a place. With no home location there
     is nothing to measure from, so the filter is off rather than dropping
@@ -88,6 +97,8 @@ class HomeState(rx.State):
     include_spicy: bool = False   # off by default; this page sits open
     seed: int = 0
     notice: str = ""
+    # One extra seed per card: logging a card re-deals that card, not all five.
+    _card_seeds: dict[str, int] = {}
 
     _cities: list[str] = []
     _geo_known: int = 0
@@ -139,7 +150,11 @@ class HomeState(rx.State):
                      if not g.dismissed and (self.include_spicy or not g.spicy)]
             self._recent = self._recent_rows(s, titles)
 
-        rng = random.Random(self.seed)
+        streams: dict[str, random.Random] = {}
+
+        def rng(card: str) -> random.Random:
+            return streams.setdefault(card, random.Random(
+                f"{self.seed}:{card}:{self._card_seeds.get(card, 0)}"))
 
         # --- something to wear, one garment per slot
         #
@@ -155,7 +170,7 @@ class HomeState(rx.State):
             # An empty slot is skipped, not faked: no coat in July is correct.
             if not fits:
                 continue
-            g = rng.choice(fits)
+            g = rng("outfit").choice(fits)
             self._outfit.append({
                 "slot": slot, "name": g.name, "colour": g.colour,
                 "placeholder": "yes" if g.placeholder else "",
@@ -190,11 +205,13 @@ class HomeState(rx.State):
                          "types": ", ".join(types) or "untagged",
                          "km": f"{km:.0f} km" if km is not None
                          else ("distance unknown" if home else "")})
-        self._place = rng.choice(pool) if pool else {}
+        dealable = voted("place", pool)
+        self._place = rng("place").choice(dealable) if dealable else {}
 
         # --- something to cook, preferring one never cooked
+        recipes = voted("recipe", recipes, lambda r: r.id)
         fresh = [r for r in recipes if r.id not in cooked] or recipes
-        r = rng.choice(fresh) if fresh else None
+        r = rng("cook").choice(fresh) if fresh else None
         self._recipe = ({"id": r.id, "name": r.name, "slug": r.slug,
                          "detail": r.description or "no description saved",
                          "mins": (f"{r.total_minutes} min" if r.total_minutes
@@ -202,7 +219,7 @@ class HomeState(rx.State):
 
         # --- a question, preferring ones never asked
         unasked = [q for q in questions if not q.asked] or questions
-        q = rng.choice(unasked) if unasked else None
+        q = rng("ask").choice(unasked) if unasked else None
         self._question = ({"id": q.id, "text": q.text,
                            "detail": f"{q.audience} · {q.depth}"} if q else {})
 
@@ -217,7 +234,7 @@ class HomeState(rx.State):
                 at.append(f"S{w.current_season}")
             if w.current_episode:
                 at.append(f"E{w.current_episode}")
-            rows.append({"id": w.id, "name": t.name,
+            rows.append({"id": w.id, "title_id": t.id, "name": t.name,
                          "genres": title_genres.get(t.id, set()),
                          "at": "".join(at) or "not started",
                          "of": (f"of {t.episodes} episodes" if t.episodes else ""),
@@ -233,12 +250,14 @@ class HomeState(rx.State):
             rows = fits or rows
         else:
             self._watch_narrowed = False
-        self._watch = rng.choice(rows) if rows else {}
+        dealable = voted("title", rows, lambda r: r["title_id"])
+        self._watch = rng("watch").choice(dealable) if dealable else {}
 
         # --- something to play, preferring what you have played least
+        games = voted("game", games, lambda g: g.id)
         if games:
             fewest = min(g.played_count for g in games)
-            pick = rng.choice([g for g in games if g.played_count == fewest])
+            pick = rng("play").choice([g for g in games if g.played_count == fewest])
             self._game = {"id": pick.id, "name": pick.name, "url": pick.url,
                           "note": pick.note,
                           "meta": " · ".join(x for x in (pick.kind, pick.players)
@@ -462,7 +481,7 @@ class HomeState(rx.State):
                     s.add(w)
                     self.notice = f"{self._watch['name']} → E{w.current_episode}"
             s.commit()
-        self.seed += 1
+        self._card_seeds = {**self._card_seeds, kind: self._card_seeds.get(kind, 0) + 1}
         return HomeState.load
 
 

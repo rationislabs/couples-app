@@ -322,6 +322,43 @@ def test_dealing_again_can_change_the_outfit():
     assert len(seen) > 1, f"outfit never changed across 40 deals: {first}"
 
 
+def _place_id(name: str) -> int:
+    with Session(ENGINE) as s:
+        return s.exec(select(Place).where(Place.name == name)).one().id
+
+
+def test_acting_on_one_card_keeps_the_others():
+    """Logging one card used to bump the shared seed, so every card changed."""
+    st = fresh(mood="surprise us", near_only=False)
+    place, outfit = st._place.get("name"), [g["name"] for g in st.outfit]
+    for _ in range(10):
+        st.done("cook")
+        st.load()
+        assert st._place.get("name") == place, "the place changed when cooking was logged"
+        assert [g["name"] for g in st.outfit] == outfit, "the outfit changed too"
+
+
+def test_a_vetoed_place_is_never_dealt_and_a_shared_yes_is_favoured():
+    from ledger_app.core import verdicts as V
+    near, far = _place_id("zz-home-test near"), _place_id("zz-home-test far")
+    V.write("place", near, "1", V.DOWN)
+    V.write("place", far, "1", V.UP)
+    V.write("place", far, "2", V.UP)
+    try:
+        st = fresh(mood="surprise us", near_only=False)
+        dealt = []
+        for _ in range(60):
+            st.deal()
+            st.load()
+            dealt.append(st._place.get("name"))
+        assert "zz-home-test near" not in dealt, "a place one of you voted down was dealt"
+        assert dealt.count("zz-home-test far") > dealt.count("zz-home-test unplaced"), dealt
+    finally:                                    # writing the same value again clears it
+        V.write("place", near, "1", V.DOWN)
+        V.write("place", far, "1", V.UP)
+        V.write("place", far, "2", V.UP)
+
+
 if __name__ == "__main__":
     made = seed()
     try:
@@ -330,16 +367,18 @@ if __name__ == "__main__":
                    test_place_verb_writes_visit_and_log,
                    test_ask_verb_marks_the_question_asked,
                    test_watch_verb_advances_one_episode, test_cook_verb_logs_once,
-                   test_play_verb_increments_the_game):
+                   test_play_verb_increments_the_game,
+                   test_a_radius_excludes_places_with_no_coordinates,
+                   test_an_unplaced_place_says_so_rather_than_showing_blank,
+                   test_radius_label_is_always_one_of_the_options,
+                   test_city_filter_narrows_and_clears,
+                   test_an_outfit_is_one_garment_per_slot_at_most,
+                   test_the_outfit_respects_the_season,
+                   test_dealing_again_can_change_the_outfit,
+                   test_acting_on_one_card_keeps_the_others,
+                   test_a_vetoed_place_is_never_dealt_and_a_shared_yes_is_favoured):
             fn()
-            test_a_radius_excludes_places_with_no_coordinates()
-        test_an_unplaced_place_says_so_rather_than_showing_blank()
-        test_radius_label_is_always_one_of_the_options()
-        test_city_filter_narrows_and_clears()
-        print(f"  ok  {fn.__name__}")
-        test_an_outfit_is_one_garment_per_slot_at_most()
-        test_the_outfit_respects_the_season()
-        test_dealing_again_can_change_the_outfit()
+            print(f"  ok  {fn.__name__}")
     finally:
         unseed(made)
     print("home checks passed")

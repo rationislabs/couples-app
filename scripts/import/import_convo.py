@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Load convo.csv into the `convoquestion` table for the Convo Starter page.
+"""Load convo.csv into the `convoquestion` table for the Conversation page.
 
     ./.venv/bin/python import_convo.py [convo.csv]
 
-Columns: ordinal,text,audience,depth. Wipes and rebuilds `convoquestion` only,
+Columns: ordinal,text,audience,depth. depth is light, medium or deep; audience
+is one of AUDIENCES below. Other values load untagged, with a warning. Wipes and rebuilds `convoquestion` only,
 carrying across the rows you removed in the app (matched on text).
 """
 from __future__ import annotations
@@ -52,7 +53,7 @@ def main() -> int:
         return 1
     untagged = [r["text"] for r in rows if not r["audience"] or not r["depth"]]
     if untagged:
-        print(f"warning: {len(untagged)} rows missing audience or depth, "
+        print(f"warning: {len(untagged)} rows with a missing or unknown audience or depth, "
               f"first: {untagged[0][:60]}")
 
     with Session(ENGINE) as s:

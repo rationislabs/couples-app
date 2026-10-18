@@ -86,7 +86,7 @@ is still only in the data and backups volumes.
 
 ## Setup
 
-Needs Linux, Python 3.12 and [uv](https://docs.astral.sh/uv/).
+Needs Linux, Python 3.12, [uv](https://docs.astral.sh/uv/) and Node.js 22 (Reflex builds the frontend with it).
 
 ```bash
 ./setup.sh --home "48.8566,2.3522"     # your own lat,lon; see ./setup.sh --help
@@ -116,7 +116,7 @@ Everything can be typed into the app. For bulk loads:
 | Script | Input |
 |---|---|
 | `scripts/import/import_places.py` | Google Takeout saved-list CSVs, or a pasted list of Maps links |
-| `scripts/import/import_convo.py` | `csv/convo.csv`: `ordinal,text,audience,depth` |
+| `scripts/import/import_convo.py` | `csv/convo.csv`: `ordinal,text,audience,depth` (depth `light`, `medium` or `deep`; audiences in the script) |
 | `scripts/data/spotify_sync.py` | your Spotify playlists (needs Spotify keys) |
 | `scripts/data/tmdb_fill.py` | fills missing library descriptions from TMDB |
 | `scripts/data/geocode_places.py`, `categorize_places.py` | coordinates and types for saved places |

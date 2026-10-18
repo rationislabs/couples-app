@@ -20,6 +20,14 @@ URL="http://localhost:$PORT/"
 LOG="$DIR/reflex.log"
 
 port_pid(){ ss -ltnp 2>/dev/null | grep -F ":$PORT " | grep -o "pid=[0-9]*" | head -1 | cut -d= -f2 || true; }
+held(){ ss -ltn 2>/dev/null | awk -v p=":$PORT" '$4 ~ p"$"' | grep -q .; }
+# Only a process of this checkout is the app: it runs from ledger_app/ or from
+# its .venv. Anything else on the port (another copy, another program) is left
+# alone; ss shows no pid at all for another user's process.
+ours(){ [ "$(readlink "/proc/$1/cwd" 2>/dev/null)" = "$DIR" ] \
+        || tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null | grep -qF "$DIR/"; }
+app_pid(){ local p; p="$(port_pid)"; if [ -n "$p" ] && ours "$p"; then echo "$p"; fi; }
+other(){ local p; p="$(port_pid)"; echo "port $PORT is held by another program${p:+ (pid $p)}; $1"; }
 serving(){ curl -s -o /dev/null --max-time 3 -w "%{http_code}" "$URL" 2>/dev/null | grep -q 200; }
 
 # The address to open from a phone. The app binds 127.0.0.1 on purpose, so the
@@ -36,10 +44,12 @@ tailnet_url(){
 
 case "${1:-status}" in
   start)
-    if serving; then echo "already running"; echo "$URL"; t="$(tailnet_url)" && echo "$t"; exit 0; fi
-    p="$(port_pid)"
-    if [ -n "$p" ]; then echo "port $PORT held by pid $p but not serving — stopping it"; kill -INT "$p" 2>/dev/null || true; sleep 2; fi
-    ( cd "$DIR" && : > "$LOG" && nohup ./.venv/bin/reflex run --env prod --single-port --backend-host 127.0.0.1 >"$LOG" 2>&1 & )
+    p="$(app_pid)"
+    if [ -n "$p" ]; then
+      if serving; then echo "already running"; echo "$URL"; t="$(tailnet_url)" && echo "$t"; exit 0; fi
+      echo "port $PORT held by pid $p but not serving — stopping it"; kill -INT "$p" 2>/dev/null || true; sleep 2
+    elif held; then other "set PORT to a free one"; exit 1; fi
+    ( cd "$DIR" && : > "$LOG" && exec nohup ./.venv/bin/reflex run --env prod --single-port --frontend-port "$PORT" --backend-host 127.0.0.1 >"$LOG" 2>&1 ) &
     echo "building (prod builds the frontend)…"
     for _ in $(seq 1 15); do
       sleep 4
@@ -47,21 +57,25 @@ case "${1:-status}" in
     done
     echo "failed to start — last lines of $LOG:"; tail -8 "$LOG"; exit 1 ;;
   stop)
-    p="$(port_pid)"
-    if [ -n "$p" ]; then kill -INT "$p" 2>/dev/null || true; echo "stopped"; else echo "not running"; fi ;;
+    p="$(app_pid)"
+    if [ -n "$p" ]; then kill -INT "$p" 2>/dev/null || true; echo "stopped"
+    elif held; then other "not stopping it"
+    else echo "not running"; fi ;;
   dev)
     # Reflex generates .web/package.json with "dev": "react-router dev --host",
     # and --host makes Vite bind 0.0.0.0 — the whole LAN. There is no config
     # option for it (rx.Config has backend_host only), and the file is rewritten
     # on compile, so the flag is stripped here on every start.
-    if serving; then echo "already running"; echo "$URL"; exit 0; fi
-    p="$(port_pid)"
-    if [ -n "$p" ]; then echo "port $PORT held by pid $p — stopping it"; kill -INT "$p" 2>/dev/null || true; sleep 2; fi
+    p="$(app_pid)"
+    if [ -n "$p" ]; then
+      if serving; then echo "already running"; echo "$URL"; exit 0; fi
+      echo "port $PORT held by pid $p — stopping it"; kill -INT "$p" 2>/dev/null || true; sleep 2
+    elif held; then other "set PORT to a free one"; exit 1; fi
     PKG="$DIR/.web/package.json"
     [ -f "$PKG" ] && sed -i 's|"dev": "react-router dev --host"|"dev": "react-router dev"|' "$PKG" && echo "stripped --host from the dev script"
     # Pin the dev backend port here rather than in rxconfig.py: prod refuses to
     # start when both ports are set and differ, and dev needs them to differ.
-    ( cd "$DIR" && : > "$LOG" && nohup ./.venv/bin/reflex run --backend-host 127.0.0.1 --backend-port 8100 >"$LOG" 2>&1 & )
+    ( cd "$DIR" && : > "$LOG" && exec nohup ./.venv/bin/reflex run --frontend-port "$PORT" --backend-host 127.0.0.1 --backend-port 8100 >"$LOG" 2>&1 ) &
     echo "starting dev (hot reload)…"
     for _ in $(seq 1 20); do
       sleep 3
@@ -142,8 +156,11 @@ case "${1:-status}" in
   restart) "$0" stop; sleep 2; "$0" start ;;
   restart-dev) "$0" stop; sleep 2; "$0" dev ;;
   status)
-    if serving; then echo "running (pid $(port_pid))"; echo "$URL"
-    else p="$(port_pid)"; [ -n "$p" ] && echo "pid $p on $PORT but not serving — ./ledger.sh restart" || echo "not running"; fi ;;
+    p="$(app_pid)"
+    if [ -n "$p" ] && serving; then echo "running (pid $p)"; echo "$URL"
+    elif [ -n "$p" ]; then echo "pid $p on $PORT but not serving — ./ledger.sh restart"
+    elif held; then other "this app is not running"
+    else echo "not running"; fi ;;
   open) "$0" start >/dev/null || exit 1; xdg-open "$URL" >/dev/null 2>&1 & echo "$URL" ;;
   logs) tail -n "${2:-40}" "$LOG" ;;
   *) echo "usage: ${0##*/} {start|dev|stop|restart|restart-dev|watch|status|check|open|logs}"; exit 2 ;;

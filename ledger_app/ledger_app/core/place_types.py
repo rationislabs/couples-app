@@ -25,9 +25,9 @@ TYPES: list[str] = [t for ts in GROUPS.values() for t in ts]
 GROUP_OF: dict[str, str] = {t: g for g, ts in GROUPS.items() for t in ts}
 
 GROUP_HUE = {
-    "food & drink": "#E2503F", "adventure": "#F2A93B", "water": "#3FB6A8",
+    "food & drink": "#E87668", "adventure": "#F2A93B", "water": "#3FB6A8",
     "culture": "#8A7DD8", "outdoors": "#6FBF73", "play": "var(--rose)",
-    "trip": "#B9C6D8", "shopping": "#D98A3B", "at home": "#7C8CA8",
+    "trip": "#B9C6D8", "shopping": "#D98A3B", "at home": "#8998B1",
 }
 
 

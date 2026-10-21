@@ -25,9 +25,9 @@ from ..core.state import ENGINE
 KINDS = ["clothing", "homeware", "furniture", "plants", "food", "beauty",
          "outdoor", "tech", "books", "gifts", "craft"]
 KIND_HUE = {
-    "clothing": "#E2503F", "homeware": "#F2A93B", "furniture": "#8A7DD8",
+    "clothing": "#E87668", "homeware": "#F2A93B", "furniture": "#8A7DD8",
     "plants": "#6FBF73", "food": "var(--rose)", "beauty": "#3FB6A8",
-    "outdoor": "#4F9D69", "tech": "#B9C6D8", "books": "#7C8CA8",
+    "outdoor": "#4F9D69", "tech": "#B9C6D8", "books": "#8998B1",
     "gifts": "#D98A3B", "craft": "#9B7BB8",
 }
 PRICE_BANDS = ["budget", "mid", "premium"]

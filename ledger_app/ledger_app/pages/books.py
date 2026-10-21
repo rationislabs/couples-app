@@ -26,14 +26,14 @@ from ..core.state import ENGINE
 SHELVES = ["want to buy", "want to read", "reading", "read"]
 SHELF_HUE = {
     "want to buy": "#F2A93B",   # mustard: something to act on
-    "want to read": "#7C8CA8",  # dim on purpose — the someday pile
+    "want to read": "#8998B1",  # dim on purpose — the someday pile
     "reading": "#3FB6A8",       # teal, same "in progress" it means elsewhere
     "read": "#5FBE8C",          # the only green in the app: done
 }
 KINDS = ["baking", "cooking", "drinks", "art", "fiction", "reference"]
 KIND_HUE = {
     "baking": "#D98A3B", "cooking": "var(--rose)", "drinks": "#8A7DD8",
-    "art": "#E2503F", "fiction": "#9B7BB8", "reference": "#B9C6D8",
+    "art": "#E87668", "fiction": "#9B7BB8", "reference": "#B9C6D8",
 }
 NO_KIND = "— none —"
 

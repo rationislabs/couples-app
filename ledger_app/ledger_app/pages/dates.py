@@ -68,7 +68,7 @@ def build_map(rows: list[dict], centre: tuple[float, float] | None) -> tuple[str
      filtered, so pins and popups keep their real colours. */
   .leaflet-tile-pane{filter:invert(1) hue-rotate(185deg) brightness(.78)
                             contrast(.92) saturate(.55)}
-  .leaflet-control-attribution{background:#12213A!important;color:#7C8CA8!important}
+  .leaflet-control-attribution{background:#12213A!important;color:#8998B1!important}
   .leaflet-control-attribution a{color:#B9C6D8!important}
   .leaflet-popup-content-wrapper{background:#12213A;color:#E8EDF5;border-radius:2px}
   .leaflet-popup-tip{background:#12213A}

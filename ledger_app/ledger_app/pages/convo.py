@@ -28,13 +28,13 @@ DEPTHS = ["light", "medium", "deep"]
 DEPTH_HUE = {"light": "var(--teal)", "medium": "var(--mustard)",
              "deep": "var(--vermilion)"}
 AUD_HUE = {
-    "new-people": "#3FB6A8", "dating": "#E2503F", "couples": "var(--rose)",
-    "friends": "#F2A93B", "life": "#8A7DD8", "love": "#E2503F",
+    "new-people": "#3FB6A8", "dating": "#E87668", "couples": "var(--rose)",
+    "friends": "#F2A93B", "life": "#8A7DD8", "love": "#E87668",
     "self": "#B9C6D8", "long-distance": "var(--rose)", "childhood": "#F2A93B",
     "philosophy": "#8A7DD8",
     "journal": "#3FB6A8", "funny": "#3FB6A8",
-    "would-you-rather": "#7C8CA8", "never-have-i-ever": "#7C8CA8",
-    "this-or-that": "#7C8CA8",
+    "would-you-rather": "#8998B1", "never-have-i-ever": "#8998B1",
+    "this-or-that": "#8998B1",
 }
 
 

@@ -33,8 +33,8 @@ from ..core import inline as IN
 # Ordered darkest to brightest. The index is what makes "is this room bright
 # enough" a comparison rather than a lookup table of every pairing.
 LIGHT_LEVELS = ["low", "medium", "bright indirect", "bright direct"]
-LIGHT_HUE = {"low": "#7C8CA8", "medium": "#3FB6A8",
-             "bright indirect": "#F2A93B", "bright direct": "#E2503F"}
+LIGHT_HUE = {"low": "#8998B1", "medium": "#3FB6A8",
+             "bright indirect": "#F2A93B", "bright direct": "#E87668"}
 
 # Rooms and the best light they offer. Edit this list as the flat changes; it is
 # deliberately code rather than a table because it is a property of the home,

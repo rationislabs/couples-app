@@ -2,8 +2,8 @@
 
 --dim is the secondary text colour on every page; --vermilion and --rose are
 also used as text (plant health, the spicy toggle, chips). Each is checked
-against the page (--ink), cards (--plate) and raised rows (--plate2), and rose
-must come from its token, not a hex copy that would escape this check.
+against the page (--ink), cards (--plate) and raised rows (--plate2), and no
+hex copy of a value they replaced may survive to escape this check.
 
     ./.venv/bin/python test_contrast.py
 """
@@ -38,14 +38,20 @@ def test_text_colours_pass_aa_on_every_surface():
             assert r >= 4.5, f"{t} on {s}: {r:.2f}:1"
 
 
-def test_rose_is_used_through_its_token():
+# Values the tokens above replaced. A hex copy of one in a chip, bar or map
+# colour escapes the token, and the check above with it.
+RETIRED = ("#C43A6E", "#E2503F", "#7C8CA8")
+
+
+def test_no_copy_of_a_retired_value_survives():
     hits = [f"{p.name}:{n}" for p in sorted((ROOT / "ledger_app").rglob("*.py"))
-            for n, line in enumerate(p.read_text().splitlines(), 1) if "#C43A6E" in line.upper()]
+            for n, line in enumerate(p.read_text().splitlines(), 1)
+            if any(h in line.upper() for h in RETIRED)]
     assert not hits, hits
 
 
 if __name__ == "__main__":
-    for fn in (test_text_colours_pass_aa_on_every_surface, test_rose_is_used_through_its_token):
+    for fn in (test_text_colours_pass_aa_on_every_surface, test_no_copy_of_a_retired_value_survives):
         fn()
         print(f"  ok  {fn.__name__}")
     print("contrast checks passed")

@@ -55,11 +55,11 @@ def country_code(name: str) -> str:
 # Country reads as colour first. Pin a hue per ISO-2 code here if you like;
 # anything unpinned gets a deterministic one from the cycle.
 HUES: dict[str, str] = {}
-_CYCLE = ["#F2A93B", "#3FB6A8", "#E2503F", "#8E7CC3", "#7C8CA8"]
+_CYCLE = ["#F2A93B", "#3FB6A8", "#E87668", "#8E7CC3", "#8998B1"]
 
 # Medium gets the same treatment as country: the chip wears the colour that the
 # rows are keyed by, so the filter row needs no label above it.
-MEDIUM_HUES = {"Anime": "#F2A93B", "Anime film": "#E2503F",
+MEDIUM_HUES = {"Anime": "#F2A93B", "Anime film": "#E87668",
                "Movie": "#3FB6A8", "TV": "#8E7CC3"}
 
 

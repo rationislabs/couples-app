@@ -22,7 +22,7 @@ RAMP = {"--ink": "#0A1626", "--ink2": "#0D1A2C", "--plate": "#12213A",
         "--edge": "#35507A"}
 
 # Everything that is ever drawn on a plate.
-FOREGROUND = {"--bone": "#E8EDF5", "--dim": "#7C8CA8", "--good": "#5FBE8C",
+FOREGROUND = {"--bone": "#E8EDF5", "--dim": "#8998B1", "--good": "#5FBE8C",
               "--mustard": "#F2A93B", "--teal": "#3FB6A8"}
 
 # Emitted as `.page-*`, not `.room-*`: rooms carry voice, density and the
@@ -79,7 +79,7 @@ def test_every_page_surface_carries_text():
     for page in PAGE_HUES:
         plate = page_ramp(page)["--plate"]
         assert ratio(plate, "#E8EDF5") >= 7.0, f"{page}: bone on plate"
-        assert ratio(plate, "#7C8CA8") >= 4.5, f"{page}: dim on plate"
+        assert ratio(plate, "#8998B1") >= 4.5, f"{page}: dim on plate"
 
 
 def test_rotation_holds_contrast_to_the_base_plate():

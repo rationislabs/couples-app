@@ -90,7 +90,7 @@ Needs Linux, Python 3.12, [uv](https://docs.astral.sh/uv/) and Node.js 22 (Refle
 
 ```bash
 ./setup.sh --home "48.8566,2.3522"     # your own lat,lon; see ./setup.sh --help
-./ledger.sh start                      # prod build on 127.0.0.1:3000
+./ledger.sh start                      # prod build on 127.0.0.1:3100
 ```
 
 `setup.sh` creates the venv, copies `.env.example` to `.env`, builds an empty

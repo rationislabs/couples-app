@@ -144,7 +144,7 @@ def check_network_binding() -> None:
     # listener on :8000 and blamed us for an unrelated root-owned process.
     ours = [l for l in out.splitlines()
             if re.search(r'"(reflex|MainThread|node|python3?)"', l)
-            and re.search(r":(3000|8000)\s", l)]
+            and re.search(r":(3100|8000|8100)\s", l)]
     if not ours:
         ok("app not currently running")
         return

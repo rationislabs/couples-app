@@ -17,15 +17,17 @@ _os.environ.setdefault("REFLEX_UPLOADED_FILES_DIR", str(_gallery_dir()))
 # which Reflex generates as "react-router dev --host". The bare --host makes
 # Vite listen on 0.0.0.0, exposing an app that has no login to the whole
 # network. rx.Config has no frontend host option, and editing package.json does
-# not survive, because the generator rewrites that key every time.
+# not survive: _compile_package_json takes the "dev" key from this constant on
+# every compile, so ledger.sh's strip before a start was rewritten straight back.
 #
-# An earlier version of this file monkey-patched
-# reflex_base.constants.installer.PackageJson.Commands.DEV to drop the flag.
-# That is removed: the patch only applies where rxconfig is imported, so any
-# code path that regenerates package.json without it writes the flag back, and
-# Reflex re-reads that file on every line of frontend output. A file that keeps
-# changing under that reader is how `reflex run` died with
-# JSONDecodeError: Expecting value: line 1 column 1 (char 0).
+# So the constant itself names loopback. Every reflex command loads this file
+# before it renders package.json, so every render agrees and the file never
+# flips under Reflex's reader. The JSONDecodeError
+# (Expecting value: line 1 column 1) came from a second writer, ledger.sh
+# editing package.json while dev was up; nothing outside Reflex writes it now.
+from reflex_base.constants.installer import PackageJson as _PackageJson  # noqa: E402
+
+_PackageJson.Commands.DEV = "react-router dev --host 127.0.0.1"
 #
 # Use prod mode instead for anything you actually browse:
 #   ./ledger.sh start      # --env prod --single-port --backend-host 127.0.0.1
@@ -44,7 +46,7 @@ config = rx.Config(
     # "Cannot connect to server: websocket error" with nothing listening there.
     # 8000 is often held by something else, which is what pushes the probe
     # into guessing, so the backend is moved clear of it.
-    frontend_port=3000,
+    frontend_port=3100,
     # backend_port is deliberately NOT pinned here. Prod runs with
     # --single-port, and reflex.py rejects the run outright when prod has both
     # ports set to different values ("frontend and backend must run on the same
@@ -52,7 +54,7 @@ config = rx.Config(
     # gets its backend port from ledger.sh instead.
     # Vite answers 403 to any request whose Host header it does not recognise,
     # which is what `tailscale serve` gets when it proxies the tailnet hostname
-    # to 127.0.0.1:3000. Named explicitly rather than True: True accepts any
+    # to 127.0.0.1:3100. Named explicitly rather than True: True accepts any
     # Host, which re-opens DNS rebinding against an app that has no login.
     # The tailnet name comes only from LEDGER_ALLOWED_HOST, and only matters in
     # dev mode (prod serves no Vite).

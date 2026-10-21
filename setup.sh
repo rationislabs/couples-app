@@ -83,7 +83,7 @@ step "Python environment"
 if [ -x "$PY" ]; then
   ok "venv exists ($("$PY" -V))"
 else
-  ( cd "$APP" && uv venv .venv )
+  ( cd "$APP" && uv venv .venv --python 3.12 )   # as CI and the image; uv otherwise takes the newest installed
   ok "created $VENV"
 fi
 ( cd "$APP" && VIRTUAL_ENV="$VENV" uv pip install -q -r requirements.txt )

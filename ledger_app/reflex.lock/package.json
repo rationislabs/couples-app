@@ -2,7 +2,7 @@
   "name": "reflex",
   "type": "module",
   "scripts": {
-    "dev": "react-router dev --host",
+    "dev": "react-router dev --host 127.0.0.1",
     "export": "react-router build"
   },
   "dependencies": {

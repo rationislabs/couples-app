@@ -29,20 +29,28 @@ kill -0 "$other" 2>/dev/null || { echo "FAIL: start killed another program: $out
 echo "$out" | grep -q "another program" || { echo "FAIL: start did not say why: $out"; exit 1; }
 echo "  ok  start refuses a port another program holds"
 
-# rxconfig.py pins 3000; without the flag PORT never reaches Reflex.
+# rxconfig.py pins 3100; without the flag PORT never reaches Reflex.
 [ "$(grep -c -- '--frontend-port "\$PORT"' "$ROOT/ledger.sh")" -eq 2 ] \
   || { echo "FAIL: start and dev must pass --frontend-port \"\$PORT\""; exit 1; }
 echo "  ok  start and dev run Reflex on \$PORT"
 
 # The app's own process, through a stand-in reflex in a throwaway checkout:
-# start must return even when its output is captured, and stop must stop it.
+# start must return even when its output is captured, and stop must stop all of
+# it. Like reflex dev, the port is held by a child (Vite) and the backend is a
+# sibling on a port ledger.sh never reads, which stop used to leave running.
 kill "$other" 2>/dev/null; sleep 0.5
 fake=$(mktemp -d); mkdir -p "$fake/ledger_app/.venv/bin"
 cp "$ROOT/ledger.sh" "$fake/"
-cat > "$fake/ledger_app/.venv/bin/reflex" <<'EOF'
+backend="ledger-test-backend-$$"
+cat > "$fake/ledger_app/.venv/bin/reflex" <<EOF
 #!/usr/bin/env bash
-while [ $# -gt 0 ]; do [ "$1" = --frontend-port ] && port=$2; shift; done
-exec python3 -m http.server "$port" --bind 127.0.0.1
+while [ \$# -gt 0 ]; do [ "\$1" = --frontend-port ] && port=\$2; shift; done
+python3 -c 'import signal, time; signal.signal(signal.SIGINT, signal.default_int_handler); time.sleep(300)' $backend &
+python3 -c 'import runpy, signal, sys
+signal.signal(signal.SIGINT, signal.default_int_handler)
+sys.argv = ["http.server", sys.argv[1], "--bind", "127.0.0.1"]
+runpy.run_module("http.server", run_name="__main__")' "\$port" &
+wait
 EOF
 chmod +x "$fake/ledger_app/.venv/bin/reflex"
 trap 'kill "$other" 2>/dev/null; PORT=$port "$fake/ledger.sh" stop >/dev/null 2>&1; rm -rf "$www" "$fake"' EXIT
@@ -53,5 +61,6 @@ echo "  ok  start returns with its output captured"
 PORT=$port "$fake/ledger.sh" status | grep -q running || { echo "FAIL: status missed the app"; exit 1; }
 PORT=$port "$fake/ledger.sh" stop >/dev/null; sleep 1
 curl -s -o /dev/null --max-time 2 "http://127.0.0.1:$port/" && { echo "FAIL: stop left the app running"; exit 1; }
+pgrep -f "$backend" >/dev/null && { pkill -f "$backend"; echo "FAIL: stop left the backend running"; exit 1; }
 echo "  ok  status and stop find the app's own process"
 echo "ledger.sh checks passed"

@@ -15,7 +15,7 @@ DIR="$ROOT/ledger_app"
 if [ -f "$ROOT/.env" ]; then
   set -a; . <(grep -E '^LEDGER_[A-Z_]+=' "$ROOT/.env"); set +a
 fi
-PORT="${PORT:-3000}"
+PORT="${PORT:-3100}"
 URL="http://localhost:$PORT/"
 LOG="$DIR/reflex.log"
 
@@ -28,6 +28,12 @@ ours(){ [ "$(readlink "/proc/$1/cwd" 2>/dev/null)" = "$DIR" ] \
         || tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null | grep -qF "$DIR/"; }
 app_pid(){ local p; p="$(port_pid)"; if [ -n "$p" ] && ours "$p"; then echo "$p"; fi; }
 other(){ local p; p="$(port_pid)"; echo "port $PORT is held by another program${p:+ (pid $p)}; $1"; }
+# The app runs in its own process group (setsid below): in dev the port is held
+# by Vite, and the backend and reflex itself are siblings no port leads to.
+# Stopping the group stops all of it. A group whose leader is not ours (an app
+# started before setsid) only loses the process on the port.
+halt(){ local g; g="$(ps -o pgid= -p "$1" | tr -d ' ')"
+        if [ -n "$g" ] && ours "$g"; then kill -INT -- "-$g"; else kill -INT "$1"; fi 2>/dev/null || true; }
 serving(){ curl -s -o /dev/null --max-time 3 -w "%{http_code}" "$URL" 2>/dev/null | grep -q 200; }
 
 # The address to open from a phone. The app binds 127.0.0.1 on purpose, so the
@@ -47,9 +53,9 @@ case "${1:-status}" in
     p="$(app_pid)"
     if [ -n "$p" ]; then
       if serving; then echo "already running"; echo "$URL"; t="$(tailnet_url)" && echo "$t"; exit 0; fi
-      echo "port $PORT held by pid $p but not serving — stopping it"; kill -INT "$p" 2>/dev/null || true; sleep 2
+      echo "port $PORT held by pid $p but not serving — stopping it"; halt "$p"; sleep 2
     elif held; then other "set PORT to a free one"; exit 1; fi
-    ( cd "$DIR" && : > "$LOG" && exec nohup ./.venv/bin/reflex run --env prod --single-port --frontend-port "$PORT" --backend-host 127.0.0.1 >"$LOG" 2>&1 ) &
+    ( cd "$DIR" && : > "$LOG" && exec setsid nohup ./.venv/bin/reflex run --env prod --single-port --frontend-port "$PORT" --backend-host 127.0.0.1 >"$LOG" 2>&1 ) &
     echo "building (prod builds the frontend)…"
     for _ in $(seq 1 15); do
       sleep 4
@@ -58,34 +64,26 @@ case "${1:-status}" in
     echo "failed to start — last lines of $LOG:"; tail -8 "$LOG"; exit 1 ;;
   stop)
     p="$(app_pid)"
-    if [ -n "$p" ]; then kill -INT "$p" 2>/dev/null || true; echo "stopped"
+    if [ -n "$p" ]; then halt "$p"; echo "stopped"
     elif held; then other "not stopping it"
     else echo "not running"; fi ;;
   dev)
-    # Reflex generates .web/package.json with "dev": "react-router dev --host",
-    # and --host makes Vite bind 0.0.0.0 — the whole LAN. There is no config
-    # option for it (rx.Config has backend_host only), and the file is rewritten
-    # on compile, so the flag is stripped here on every start.
+    # Vite binds loopback through the dev script rxconfig.py sets; the check
+    # after start below catches it if that ever stops holding.
     p="$(app_pid)"
     if [ -n "$p" ]; then
       if serving; then echo "already running"; echo "$URL"; exit 0; fi
-      echo "port $PORT held by pid $p — stopping it"; kill -INT "$p" 2>/dev/null || true; sleep 2
+      echo "port $PORT held by pid $p — stopping it"; halt "$p"; sleep 2
     elif held; then other "set PORT to a free one"; exit 1; fi
-    PKG="$DIR/.web/package.json"
-    [ -f "$PKG" ] && sed -i 's|"dev": "react-router dev --host"|"dev": "react-router dev"|' "$PKG" && echo "stripped --host from the dev script"
     # Pin the dev backend port here rather than in rxconfig.py: prod refuses to
     # start when both ports are set and differ, and dev needs them to differ.
-    ( cd "$DIR" && : > "$LOG" && exec nohup ./.venv/bin/reflex run --frontend-port "$PORT" --backend-host 127.0.0.1 --backend-port 8100 >"$LOG" 2>&1 ) &
+    ( cd "$DIR" && : > "$LOG" && exec setsid nohup ./.venv/bin/reflex run --frontend-port "$PORT" --backend-host 127.0.0.1 --backend-port 8100 >"$LOG" 2>&1 ) &
     echo "starting dev (hot reload)…"
     for _ in $(seq 1 20); do
       sleep 3
       if serving; then
-        # Deliberately NOT rewriting package.json here. Reflex re-reads that
-        # file on every line of frontend output, so editing it while the app is
-        # up truncates it under that reader and kills the process with
-        # JSONDecodeError. The pre-start strip above is the only safe moment.
         echo "started"; echo "$URL"
-        ss -ltnp 2>/dev/null | grep -F ":$PORT " | grep -q '0.0.0.0\|\*:' \
+        ss -ltn 2>/dev/null | awk -v p=":$PORT" '$4 ~ p"$" {print $4}' | grep -qE '^(0\.0\.0\.0|\*|\[::\]):' \
           && echo "WARNING: still bound to all interfaces — run ./ledger.sh check" \
           || echo "bound to loopback only"
         exit 0

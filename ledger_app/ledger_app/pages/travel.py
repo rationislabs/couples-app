@@ -19,7 +19,7 @@ from sqlmodel import Session, select
 
 from ..core.models import Place, Trip
 from ..core.state import ENGINE
-from ..core.ui import (COUNTRIES, NO_COUNTRY, country_code, country_hue,
+from ..core.ui import (COUNTRIES, NO_COUNTRY, header_cells, country_code, country_hue,
                   country_name, notice_toast)
 
 
@@ -248,7 +248,7 @@ def section(heading: str = "5") -> rx.Component:
     """
     return rx.vstack(
         rx.hstack(
-            rx.heading("Travel", size=heading),
+            rx.heading("Travel", size=heading, as_="h2"),
             rx.spacer(),
             rx.text(TravelState.summary, size="1", class_name="tnum",
                     style={"color": "var(--dim)"}),
@@ -277,9 +277,8 @@ def section(heading: str = "5") -> rx.Component:
             rx.box(
                 rx.table.root(
                     rx.table.header(rx.table.row(*[
-                        rx.table.column_header_cell(x) for x in
-                        ("", "Trip", "Country", "When", "Length", "Status",
-                         "Places", "Notes", "")])),
+                        *header_cells("~Colour", "Trip", "Country", "When", "Length", "Status",
+                                      "Places", "Notes", "~Actions")])),
                     rx.table.body(rx.foreach(TravelState.rows, _row)),
                     variant="surface", size="1",
                     # Radix tables are width:100%, so on a phone they compress to fit and the

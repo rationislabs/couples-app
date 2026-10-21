@@ -225,7 +225,7 @@ def ambiguity_queue() -> rx.Component:
         rx.box(
             rx.vstack(
                 rx.hstack(
-                    rx.heading("TMDB needs your pick", size="4"),
+                    rx.heading("TMDB needs your pick", size="4", as_="h2"),
                     rx.badge(LedgerState.amb_position, color_scheme=ACCENT),
                     rx.spacer(),
                     rx.button("Skip", on_click=LedgerState.amb_skip, size="1",
@@ -392,7 +392,7 @@ def deck_section(name: str, cards: rx.Var, note: str) -> rx.Component:
     return rx.vstack(
         rx.hstack(
             rx.text(rx.cond(open_, "▾", "▸"), color_scheme=ACCENT, size="3"),
-            rx.heading(name, size="4"),
+            rx.heading(name, size="4", as_="h2"),
             on_click=LedgerState.toggle_section(name),
             style={"cursor": "pointer", "user_select": "none"},
             align="center", spacing="2",

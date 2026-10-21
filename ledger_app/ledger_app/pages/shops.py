@@ -15,7 +15,7 @@ import datetime as dt
 
 import reflex as rx
 
-from ..core.ui import notice_toast
+from ..core.ui import header_cells, notice_toast
 from ..core import inline as IN
 from sqlmodel import Session, select
 
@@ -26,7 +26,7 @@ KINDS = ["clothing", "homeware", "furniture", "plants", "food", "beauty",
          "outdoor", "tech", "books", "gifts", "craft"]
 KIND_HUE = {
     "clothing": "#E2503F", "homeware": "#F2A93B", "furniture": "#8A7DD8",
-    "plants": "#6FBF73", "food": "#C43A6E", "beauty": "#3FB6A8",
+    "plants": "#6FBF73", "food": "var(--rose)", "beauty": "#3FB6A8",
     "outdoor": "#4F9D69", "tech": "#B9C6D8", "books": "#7C8CA8",
     "gifts": "#D98A3B", "craft": "#9B7BB8",
 }
@@ -443,7 +443,7 @@ def section(heading: str = "5") -> rx.Component:
     """
     return rx.vstack(
         rx.hstack(
-            rx.heading("Shopping", size=heading),
+            rx.heading("Shopping", size=heading, as_="h2"),
             rx.spacer(),
             rx.vstack(
                 rx.text(ShopState.summary, size="1", class_name="tnum",
@@ -530,9 +530,8 @@ def section(heading: str = "5") -> rx.Component:
             rx.box(
                 rx.table.root(
                     rx.table.header(rx.table.row(*[
-                        rx.table.column_header_cell(x) for x in
-                        ("", "Shop", "Kind", "Good for", "Rating", "Notes", "Price",
-                         "Delivery", "Orders", "")])),
+                        *header_cells("~Colour", "Shop", "Kind", "Good for", "Rating", "Notes",
+                                      "Price", "Delivery", "Orders", "~Actions")])),
                     rx.table.body(rx.foreach(ShopState.rows, _row)),
                     variant="surface", size="1",
                     # Radix tables are width:100%, so on a phone they compress to fit and the

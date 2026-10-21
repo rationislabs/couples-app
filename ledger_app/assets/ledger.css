@@ -12,9 +12,10 @@
   --edge:   #35507A;                /* Radix --gray-6 */
   --bone:   #E8EDF5;
   --steel:  #B9C6D8;
-  --dim:    #7C8CA8;
+  --dim:    #8998B1;                /* 4.5:1 on --plate2 */
   --mustard:   #F2A93B;
-  --vermilion: #E2503F;
+  --vermilion: #E87668;           /* 4.5:1 as text on --plate2 */
+  --rose:      #D77B9E;           /* likewise */
   --teal:      #3FB6A8;
 
   /* Bringhurst-style fourth, 16px base */
@@ -564,6 +565,8 @@ button.rt-Button:where(.rt-variant-solid) { color: var(--ink); }
    write felt like it did nothing. Same string, fixed corner, elevated, and
    dismissed on a timer by keys.js.
    --------------------------------------------------------------------------- */
+/* Out of flow, so the always-present empty region adds no gap to a stack. */
+.toast-region { position: fixed; width: 0; height: 0; }
 .toast {
   position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 70;
   max-width: min(26rem, calc(100vw - 2.5rem));
@@ -762,6 +765,13 @@ button.rt-Button:where(.rt-variant-solid) { color: var(--ink); }
   cursor: pointer; text-align: center; color: var(--dim);
 }
 .gallery-count { color: var(--dim); }
+
+/* Heard by a screen reader, not shown: names for columns that explain
+   themselves on screen. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 
 /* == GENERATED: page ramps. Nothing may be appended after this block by
    hand — it is rewritten wholesale. Put new rules ABOVE it. ==

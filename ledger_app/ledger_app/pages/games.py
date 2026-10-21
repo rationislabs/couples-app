@@ -12,7 +12,7 @@ import datetime as dt
 
 import reflex as rx
 
-from ..core.ui import choice_row, notice_toast
+from ..core.ui import choice_row, header_cells, notice_toast
 from sqlmodel import Session, select
 
 from ..core.models import Game
@@ -22,7 +22,7 @@ from ..core import verdicts as V
 
 KINDS = ["board", "detective", "couples", "party", "video", "card", "mobile"]
 KIND_HUE = {"board": "var(--mustard)", "detective": "#8A7DD8",
-            "couples": "#C43A6E", "party": "var(--teal)",
+            "couples": "var(--rose)", "party": "var(--teal)",
             "video": "#6FBF73", "card": "var(--steel)",
             # a category, not a section — the phone games sit with the rest
             "mobile": "#4FA3C7"}
@@ -279,7 +279,7 @@ def _row(g: rx.Var) -> rx.Component:
                                                   "color": "var(--steel)"}),
                         rx.fragment()),
                 rx.cond(g.spicy,
-                        rx.badge("spicy", style={"background": "#C43A6E",
+                        rx.badge("spicy", style={"background": "var(--rose)",
                                                  "color": "var(--ink)"}),
                         rx.fragment()),
                 spacing="1", wrap="wrap",
@@ -348,7 +348,7 @@ def section(heading: str = "5") -> rx.Component:
     """
     return rx.vstack(
         rx.hstack(
-            rx.heading("Games", size=heading),
+            rx.heading("Games", size=heading, as_="h2"),
             rx.spacer(),
             rx.text(GameState.summary, size="1", class_name="tnum",
                     style={"color": "var(--dim)"}),
@@ -389,9 +389,8 @@ def section(heading: str = "5") -> rx.Component:
             rx.box(
                 rx.table.root(
                     rx.table.header(rx.table.row(*[
-                        rx.table.column_header_cell(x) for x in
-                        ("", "Us", "Game", "Kind", "Players", "", "Rating", "Note",
-                         "Played", "")])),
+                        *header_cells("~Colour", "Us", "Game", "Kind", "Players", "~Tags",
+                                      "Rating", "Note", "Played", "~Actions")])),
                     rx.table.body(rx.foreach(GameState.rows, _row)),
                     variant="surface", size="1",
                     # Radix tables are width:100%, so on a phone they compress to fit and the

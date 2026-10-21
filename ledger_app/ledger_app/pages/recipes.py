@@ -941,13 +941,13 @@ def detail() -> rx.Component:
                         ),
                         rx.grid(
                             rx.vstack(
-                                rx.heading("Ingredients", size="4"),
+                                rx.heading("Ingredients", size="4", as_="h2"),
                                 rx.foreach(RecipeState.cur_ingredients,
                                            lambda i: rx.text(i, size="2")),
                                 spacing="1", align="start",
                             ),
                             rx.vstack(
-                                rx.heading("Steps", size="4"),
+                                rx.heading("Steps", size="4", as_="h2"),
                                 rx.foreach(RecipeState.cur_steps, lambda s, i: rx.text(
                                     f"{i + 1}. {s}", size="2",
                                     style={"line_height": "1.6"})),
@@ -1025,7 +1025,7 @@ def planner() -> rx.Component:
             rx.vstack(rx.foreach(RecipeState.week_days, _plan_day),
                       width="100%", spacing="2"),
             rx.divider(),
-            rx.heading("Shopping list", size="4"),
+            rx.heading("Shopping list", size="4", as_="h2"),
             rx.cond(
                 RecipeState.shopping,
                 rx.vstack(

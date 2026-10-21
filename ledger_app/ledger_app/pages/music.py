@@ -538,7 +538,7 @@ def _builder() -> rx.Component:
     """
     return rx.vstack(
         rx.hstack(
-            rx.heading("Build a playlist", size="5", class_name="block-head"),
+            rx.heading("Build a playlist", size="5", as_="h2", class_name="block-head"),
             rx.spacer(),
             rx.text(MusicState.build_summary, size="1", class_name="tnum",
                     style={"color": "var(--dim)"}),

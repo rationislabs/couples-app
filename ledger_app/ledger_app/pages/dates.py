@@ -1190,7 +1190,7 @@ def _hero() -> rx.Component:
             rx.vstack(
                 rx.text("Somewhere you have not been", size="1",
                         style={"color": "var(--dim)"}),
-                rx.link(rx.heading(s["name"], class_name="hero-title"),
+                rx.link(rx.heading(s["name"], as_="h2", class_name="hero-title"),
                         href=s["url"], is_external=True, underline="none"),
                 rx.hstack(
                     rx.box(class_name="hue", style={"background": s["hue"],
@@ -1404,7 +1404,8 @@ def page() -> rx.Component:
             rx.box(
                 rx.table.root(
                     rx.table.header(rx.table.row(
-                        rx.table.column_header_cell("", style={"width": "8px"}),
+                        rx.table.column_header_cell(rx.el.span("Colour", class_name="sr-only"),
+                                                    style={"width": "8px"}),
                         rx.table.column_header_cell("Us"),
                         _head("name", "Place"), _head("country", "Country"),
                         _head("list", "List", hide_on_phone=True),
@@ -1413,7 +1414,7 @@ def page() -> rx.Component:
                         rx.table.column_header_cell("Types"),
                         rx.table.column_header_cell("Distance"),
                         _head("been", "Been"),
-                        rx.table.column_header_cell(""))),
+                        rx.table.column_header_cell(rx.el.span("Actions", class_name="sr-only")))),
                     rx.table.body(rx.foreach(DateState.page_rows, _place_row)),
                     variant="surface", size="1",
                     # Radix tables are width:100%, so on a phone they compress to fit and the

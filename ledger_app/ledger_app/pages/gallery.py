@@ -171,7 +171,7 @@ def _tile(p: rx.Var) -> rx.Component:
 def section() -> rx.Component:
     return rx.vstack(
         rx.hstack(
-            rx.heading("Gallery", size="5", class_name="block-head"),
+            rx.heading("Gallery", size="5", as_="h2", class_name="block-head"),
             rx.spacer(),
             rx.text(GalleryState.count_label, size="1", class_name="gallery-count"),
             width="100%", align="end",

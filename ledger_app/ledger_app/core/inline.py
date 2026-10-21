@@ -67,6 +67,7 @@ def rating_cell(value, on_blur, key) -> rx.Component:
     return rx.table.cell(
         rx.input(default_value=value, on_blur=on_blur, key=key,
                  type="number", min=1, max=RATING_MAX, placeholder="–",
+                 aria_label=f"Rating, 1 to {RATING_MAX}",
                  size="1", class_name="inline-edit inline-rating"),
     )
 
@@ -74,6 +75,6 @@ def rating_cell(value, on_blur, key) -> rx.Component:
 def notes_cell(value, on_blur, key) -> rx.Component:
     return rx.table.cell(
         rx.input(default_value=value, on_blur=on_blur, key=key,
-                 placeholder="notes", size="1", max_length=NOTES_MAX,
+                 placeholder="notes", size="1", max_length=NOTES_MAX, aria_label="Notes",
                  class_name="inline-edit inline-notes"),
     )

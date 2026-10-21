@@ -23,7 +23,7 @@ import datetime as dt
 
 import reflex as rx
 
-from ..core.ui import notice_toast
+from ..core.ui import header_cells, notice_toast
 from sqlmodel import Session, select
 
 from ..core.models import Plant
@@ -83,7 +83,7 @@ def _health(r: dict) -> str:
 def _health_hue(r: dict) -> str:
     return {"parched": "var(--vermilion)", "thirsty": "var(--mustard)",
             "wrong light": "#8A7DD8", "thriving": "var(--good)",
-            "sick": "var(--vermilion)", "dying": "#C43A6E"}.get(_health(r), "")
+            "sick": "var(--vermilion)", "dying": "var(--rose)"}.get(_health(r), "")
 
 
 @dataclasses.dataclass
@@ -614,7 +614,7 @@ def section(heading: str = "5") -> rx.Component:
     """
     return rx.vstack(
         rx.hstack(
-            rx.heading("Plant Tracker", size=heading),
+            rx.heading("Plant Tracker", size=heading, as_="h2"),
             rx.spacer(),
             rx.vstack(
                 rx.text(PlantState.summary, size="1", class_name="tnum",
@@ -692,9 +692,8 @@ def section(heading: str = "5") -> rx.Component:
             rx.box(
                 rx.table.root(
                     rx.table.header(rx.table.row(*[
-                        rx.table.column_header_cell(x) for x in
-                        ("", "Plant", "Health", "Room", "Light", "Water",
-                         "Last", "Due", "Rating", "Notes", "")])),
+                        *header_cells("~Colour", "Plant", "Health", "Room", "Light", "Water",
+                                      "Last", "Due", "Rating", "Notes", "~Actions")])),
                     rx.table.body(rx.foreach(PlantState.rows, _row)),
                     variant="surface", size="1",
                     # Radix tables are width:100%, so on a phone they compress to fit and the

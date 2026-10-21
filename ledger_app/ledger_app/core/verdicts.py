@@ -36,6 +36,7 @@ UP, MID, DOWN = "up", "mid", "down"
 VALUES = [UP, MID, DOWN]
 GLYPH = {UP: "▲", MID: "●", DOWN: "▼"}
 HUE = {UP: "var(--good)", MID: "var(--dim)", DOWN: "var(--vermilion)"}
+WORD = {UP: "yes", MID: "maybe", DOWN: "no"}   # what a screen reader says for the glyph
 
 
 def read(kind: str, row_ids: list[int]) -> dict[int, dict[str, str]]:
@@ -116,6 +117,8 @@ def control(verdicts, on_click) -> rx.Component:
             *[rx.button(
                 GLYPH[v], size="1",
                 disabled=~mine,
+                aria_label=ProfileState.names[person] + f": {WORD[v]}",
+                aria_pressed=verdicts[person] == v,
                 variant=rx.cond(verdicts[person] == v, "solid", "surface"),
                 on_click=on_click(person, v),
                 style={"color": rx.cond(verdicts[person] == v,

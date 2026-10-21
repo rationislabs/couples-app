@@ -586,7 +586,7 @@ def _outfit_section() -> rx.Component:
 
     return rx.vstack(
         rx.hstack(
-            rx.heading("What to wear", size="5", class_name="block-head"),
+            rx.heading("What to wear", size="5", as_="h2", class_name="block-head"),
             rx.spacer(),
             rx.cond(HomeState.outfit_note != "",
                     rx.text(HomeState.outfit_note, size="1",
@@ -670,7 +670,7 @@ def page() -> rx.Component:
                           on_click=HomeState.toggle_spicy,
                           style={"margin": "0",
                                  "color": rx.cond(HomeState.include_spicy,
-                                                  "#C43A6E", "var(--dim)")}),
+                                                  "var(--rose)", "var(--dim)")}),
                 spacing="2", align="center", wrap="wrap",
                 class_name="filter-row", width="100%",
             ),

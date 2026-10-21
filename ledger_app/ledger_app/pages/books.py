@@ -32,7 +32,7 @@ SHELF_HUE = {
 }
 KINDS = ["baking", "cooking", "drinks", "art", "fiction", "reference"]
 KIND_HUE = {
-    "baking": "#D98A3B", "cooking": "#C43A6E", "drinks": "#8A7DD8",
+    "baking": "#D98A3B", "cooking": "var(--rose)", "drinks": "#8A7DD8",
     "art": "#E2503F", "fiction": "#9B7BB8", "reference": "#B9C6D8",
 }
 NO_KIND = "— none —"

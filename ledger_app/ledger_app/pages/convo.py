@@ -14,7 +14,7 @@ import random
 
 import reflex as rx
 
-from ..core.ui import notice_toast, pager
+from ..core.ui import header_cells, notice_toast, pager
 from sqlmodel import Session, select
 
 from ..core.models import ConvoQuestion
@@ -28,9 +28,9 @@ DEPTHS = ["light", "medium", "deep"]
 DEPTH_HUE = {"light": "var(--teal)", "medium": "var(--mustard)",
              "deep": "var(--vermilion)"}
 AUD_HUE = {
-    "new-people": "#3FB6A8", "dating": "#E2503F", "couples": "#C43A6E",
+    "new-people": "#3FB6A8", "dating": "#E2503F", "couples": "var(--rose)",
     "friends": "#F2A93B", "life": "#8A7DD8", "love": "#E2503F",
-    "self": "#B9C6D8", "long-distance": "#C43A6E", "childhood": "#F2A93B",
+    "self": "#B9C6D8", "long-distance": "var(--rose)", "childhood": "#F2A93B",
     "philosophy": "#8A7DD8",
     "journal": "#3FB6A8", "funny": "#3FB6A8",
     "would-you-rather": "#7C8CA8", "never-have-i-ever": "#7C8CA8",
@@ -380,7 +380,7 @@ def page() -> rx.Component:
                                 rx.fragment()),
                         width="100%", align="center", spacing="2",
                     ),
-                    rx.heading(ConvoState.card.text, as_="p",
+                    rx.heading(ConvoState.card.text, as_="h2",
                                class_name="question"),
                     rx.hstack(
                         rx.button("Prev", size="2", variant="surface",
@@ -410,7 +410,7 @@ def page() -> rx.Component:
                 rx.box(
                     rx.text("Drawn at random", size="1",
                             style={"color": "var(--dim)"}),
-                    rx.heading(ConvoState.picked, as_="p", class_name="question"),
+                    rx.heading(ConvoState.picked, as_="h2", class_name="question"),
                     rx.text(ConvoState.picked_tags, size="1",
                             style={"color": "var(--dim)"}),
                     rx.hstack(
@@ -490,8 +490,8 @@ def page() -> rx.Component:
                     rx.box(
                         rx.table.root(
                             rx.table.header(rx.table.row(*[
-                                rx.table.column_header_cell(x) for x in
-                                ("#", "Question", "Who", "Depth", "Asked", "")])),
+                                *header_cells("#", "Question", "Who", "Depth", "Asked",
+                                              "~Actions")])),
                             rx.table.body(rx.foreach(ConvoState.rows, _row)),
                             variant="surface", size="1",
                             # Radix tables are width:100%, so on a phone they compress to fit and the

@@ -28,7 +28,7 @@ def _apartment_map() -> rx.Component:
     """
     return rx.vstack(
         rx.hstack(
-            rx.heading("Apartment", size="5", class_name="block-head"),
+            rx.heading("Apartment", size="5", as_="h2", class_name="block-head"),
             rx.spacer(),
             rx.text("placeholder", size="1",
                     style={"color": "var(--dim)"}),

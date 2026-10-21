@@ -298,6 +298,14 @@ def page_shell(title: str, route: str, *children: rx.Component,
     )
 
 
+def header_cells(*labels: str) -> list[rx.Component]:
+    """Column headers. A label starting with "~" is heard, not seen: for a
+    column that explains itself on screen (a colour strip, the row's buttons)
+    but would otherwise be read as an unnamed column."""
+    return [rx.table.column_header_cell(rx.el.span(x[1:], class_name="sr-only"))
+            if x.startswith("~") else rx.table.column_header_cell(x) for x in labels]
+
+
 def notice_toast(message) -> rx.Component:
     """The one place a write says what it did.
 
@@ -313,11 +321,13 @@ def notice_toast(message) -> rx.Component:
     already uses. No handler changed; a toast the backend has to remember to
     dismiss is a toast that gets stuck.
     """
-    return rx.cond(
-        message != "",
-        rx.box(rx.text(message, size="2"), class_name="toast", role="status",
-               aria_live="polite"),
-        rx.fragment(),
+    # The live region is always there, empty; only the message comes and goes.
+    # A region inserted with its text already inside is often not announced.
+    return rx.box(
+        rx.cond(message != "",
+                rx.box(rx.text(message, size="2"), class_name="toast"),
+                rx.fragment()),
+        role="status", aria_live="polite", class_name="toast-region",
     )
 
 

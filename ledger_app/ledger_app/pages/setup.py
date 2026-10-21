@@ -83,7 +83,7 @@ def _form() -> rx.Component:
                  on_change=SetupState.set_first, width="100%"),
         rx.input(placeholder="Second name", value=SetupState.second,
                  on_change=SetupState.set_second, width="100%"),
-        rx.heading("Home (optional)", size="4"),
+        rx.heading("Home (optional)", size="4", as_="h2"),
         rx.text("Distances on Tonight and Dates are measured from here. "
                 "Leave it blank to hide them.", size="2"),
         rx.hstack(

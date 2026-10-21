@@ -18,3 +18,10 @@ updates:
     groups:
       python:
         patterns: ["*"]
+  # Reflex owns these pins and re-writes them on every run, so only security
+  # updates (limit 0 turns version updates off); a fix lands as an override.
+  - package-ecosystem: bun
+    directory: /ledger_app/reflex.lock
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0

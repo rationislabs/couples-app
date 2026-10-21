@@ -38,6 +38,7 @@ ENV = HERE / ".env"
 ENGINE = create_engine(f"sqlite:///{db_path()}")
 APPLY = "--apply" in sys.argv
 API = "https://api.spotify.com/v1"
+MAX_WAIT = 120   # seconds; a longer Retry-After ends the run instead of stalling it
 
 # The modify scopes exist for spotify_push.py. This script still issues no write
 # calls — but note the guarantee moved: it used to be enforced by the token
@@ -158,6 +159,9 @@ def get(path: str, token: str, **params):
             if ex.code == 429:
                 # Spotify's rolling window; the header is authoritative
                 wait = int(ex.headers.get("Retry-After", "2")) + 1
+                if wait > MAX_WAIT:
+                    sys.exit(f"Spotify asks to wait {wait}s before the next request; "
+                             "try the sync again later")
                 print(f"    rate limited, waiting {wait}s")
                 time.sleep(wait)
                 continue
@@ -203,6 +207,16 @@ def whoami() -> None:
 # /artists/{id} returns "genres": null, alongside Spotify's
 # withdrawal of audio-features and recommendations. Track.genres therefore stays
 # empty and any vibe signal has to come from outside Spotify.
+
+
+def forget_missing(s: Session, listed: set[str]) -> int:
+    """Drop playlists Spotify no longer lists, with their track rows; the
+    tracks stay, other playlists may hold them. Returns how many went."""
+    gone = [p for p in s.exec(select(Playlist)).all() if p.spotify_id not in listed]
+    for p in gone:
+        s.exec(delete(PlaylistTrack).where(PlaylistTrack.playlist_id == p.id))
+        s.delete(p)
+    return len(gone)
 
 
 def sync() -> None:
@@ -313,7 +327,11 @@ def sync() -> None:
                 s.flush()
                 s.add(PlaylistTrack(playlist_id=row.id, track_id=tr.id,
                                     position=t["pos"]))
+        # every listed id, readable or not: an unreadable one still exists
+        removed = forget_missing(s, {p["id"] for p in playlists if p.get("id")})
         s.commit()
+        if removed:
+            print(f"removed {removed} playlists deleted in Spotify")
         print(f"wrote {len(seen_playlists)} playlists, "
               f"{len(s.exec(select(Track)).all())} tracks")
 

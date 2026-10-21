@@ -9,4 +9,4 @@ cryptography==50.0.2
 keyring==25.7.0
 
 # gallery thumbnails; a phone photo is 3-18 MB and the grid shows up to 100
-pillow==12.3.0
+pillow==13.0.0

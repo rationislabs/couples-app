@@ -374,11 +374,6 @@ def data_table(columns: list[str], rows: rx.Var, row_fn,
                 *[rx.table.column_header_cell(c) for c in columns])),
             rx.table.body(rx.foreach(rows, row_fn)),
             variant="surface", size="1",
-            # Radix tables are width:100%, so on a phone they compress to fit and the
-            # overflow_x wrapper never scrolls — the width comes out of the columns
-            # instead. A floor below 48em makes the wrapper scroll, which is the
-            # ordinary phone table. Tiers: initial, xs 30em, sm 48em, md, lg.
-            min_width=["34rem", "34rem", "auto", "auto", "auto"],
         ),
         width="100%", overflow_x="auto",
     )

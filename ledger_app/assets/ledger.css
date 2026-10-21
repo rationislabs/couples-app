@@ -766,6 +766,13 @@ button.rt-Button:where(.rt-variant-solid) { color: var(--ink); }
 }
 .gallery-count { color: var(--dim); }
 
+/* Phone tables scroll sideways in one place. Radix wraps every table in its
+   own scroll viewport, so the floor goes on the table inside it: on the root
+   (as it was) the root and the box around it both scrolled. */
+@media (max-width: 47.99em) {
+  .rt-TableRootTable { min-width: 34rem; }
+}
+
 /* Heard by a screen reader, not shown: names for columns that explain
    themselves on screen. */
 .sr-only {

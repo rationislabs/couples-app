@@ -132,6 +132,20 @@ def test_every_block_sits_above_the_generated_region():
         assert t.index(name) < t.index(BEGIN), f"{name} is below the generated region"
 
 
+def test_phone_tables_scroll_in_one_place():
+    """The 34rem floor sat on Radix's table root, so on a phone the root and
+    the box around it both scrolled sideways. It belongs on the table inside
+    Radix's own scroll viewport."""
+    import re as _re
+    src = CSS.parent.parent / "ledger_app"
+    hits = [f"{f.name}:{n}" for f in sorted(src.rglob("*.py"))
+            for n, line in enumerate(f.read_text().splitlines(), 1)
+            if _re.search(r'min_width=\["34rem"', line)]
+    assert not hits, f"table roots still carry the floor: {hits}"
+    assert _re.search(r"@media \(max-width: 47\.99em\)\s*\{\s*\.rt-TableRootTable\s*\{\s*min-width: 34rem",
+                      text()), "the floor is not on .rt-TableRootTable below 48em"
+
+
 if __name__ == "__main__":
     for fn in (test_braces_balance,
                test_the_generated_region_is_the_end_of_the_file,
@@ -143,7 +157,8 @@ if __name__ == "__main__":
                test_the_navbar_emoji_turn_over_daily,
                test_every_paged_table_has_prev_next_above_and_below,
                test_the_phone_menu_lists_every_tab_and_marks_this_page,
-               test_every_block_sits_above_the_generated_region):
+               test_every_block_sits_above_the_generated_region,
+               test_phone_tables_scroll_in_one_place):
         fn()
         print(f"  ok  {fn.__name__}")
     print("css checks passed")

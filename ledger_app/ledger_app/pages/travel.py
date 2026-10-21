@@ -281,11 +281,6 @@ def section(heading: str = "5") -> rx.Component:
                                       "Places", "Notes", "~Actions")])),
                     rx.table.body(rx.foreach(TravelState.rows, _row)),
                     variant="surface", size="1",
-                    # Radix tables are width:100%, so on a phone they compress to fit and the
-                    # overflow_x wrapper never scrolls — the width comes out of the columns
-                    # instead. A floor below 48em makes the wrapper scroll, which is the
-                    # ordinary phone table. Tiers: initial, xs 30em, sm 48em, md, lg.
-                    min_width=["34rem", "34rem", "auto", "auto", "auto"],
                 ),
                 width="100%", overflow_x="auto",
             ),

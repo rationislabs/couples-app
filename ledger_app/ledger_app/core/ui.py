@@ -185,7 +185,11 @@ def navbar(active: str) -> rx.Component:
         rx.link(rx.icon("settings", size=18), href="/settings", aria_label="Settings",
                 class_name="nav-settings"),
         rx.cond(ProfileState.backup_warning != "",
-                rx.link(ProfileState.backup_warning, href="/settings", size="1",
+                # The text is ~90px a phone bar does not have, so there only the
+                # icon shows (ledger.css); the label keeps the words for both.
+                rx.link(rx.icon("triangle-alert", size=18),
+                        rx.text(ProfileState.backup_warning, as_="span"),
+                        href="/settings", size="1", aria_label=ProfileState.backup_warning,
                         class_name="nav-backup-warning",
                         style={"color": "var(--vermilion)"})),
         rx.text(NavState.emoji, class_name="nav-emoji"),

@@ -132,9 +132,10 @@ body {
               background var(--dur-1) var(--ease);
 }
 .nav-tab:hover { color: var(--bone); background: var(--plate3); }
-/* Today's emoji, ui.daily_emoji. Never shrinks: on a phone the tab strip
-   scrolls instead. */
+/* Today's emoji, ui.daily_emoji. Never shrinks; a phone hides it instead. */
 .nav-emoji { flex: 0 0 auto; white-space: nowrap; font-size: 1.1rem; letter-spacing: 0.1em; }
+/* ui.navbar: the backup warning is its words above a phone, its icon on one. */
+.nav-backup-warning > svg { display: none; }
 .nav-tab.on { color: var(--ink); }
 .nav-tab.on:hover { color: var(--ink); }
 
@@ -376,6 +377,18 @@ button.rt-Button:where(.rt-variant-solid) { color: var(--ink); }
   /* The tabs are a menu below 48em (ui.navbar), so the bar only holds the
      page name, the emoji and the menu button. */
   .nav { padding: 0.7rem var(--gutter); gap: 0.6rem; }
+  /* Measured at 390px: page name, both names, settings, the backup warning,
+     five emoji and the menu came to 497px, and the page scrolled sideways.
+     The emoji go and the warning folds to its icon; the names shorten with an
+     ellipsis only where even that is not enough (320px). */
+  .nav-emoji { display: none; }
+  .nav-backup-warning > svg { display: block; }
+  .nav-backup-warning > span { display: none; }
+  .profile-toggle { min-width: 0; }
+  .profile-toggle .rt-Button {
+    display: block; min-width: 0; flex-shrink: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
 
   /* No `top: <navbar height>` for the table headers here. Every table sits in
      an overflow-x wrapper, which makes the wrapper the header's sticky box, not

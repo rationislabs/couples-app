@@ -146,6 +146,18 @@ def test_phone_tables_scroll_in_one_place():
                       text()), "the floor is not on .rt-TableRootTable below 48em"
 
 
+def test_the_phone_navbar_drops_what_does_not_fit():
+    """At 390px the bar came to 497px and the whole page scrolled sideways."""
+    t = text()
+    phone = t[t.index("@media (max-width: 767.98px) {"):]
+    phone = phone[:phone.index("\n}\n")]
+    for rule in (".nav-emoji { display: none; }", ".nav-backup-warning > span { display: none; }",
+                 ".nav-backup-warning > svg { display: block; }"):
+        assert rule in phone, f"phone block lacks {rule}"
+    assert ".nav-backup-warning > svg { display: none; }" in t.replace(phone, ""), \
+        "the icon shows next to the words above a phone"
+
+
 if __name__ == "__main__":
     for fn in (test_braces_balance,
                test_the_generated_region_is_the_end_of_the_file,
@@ -158,7 +170,8 @@ if __name__ == "__main__":
                test_every_paged_table_has_prev_next_above_and_below,
                test_the_phone_menu_lists_every_tab_and_marks_this_page,
                test_every_block_sits_above_the_generated_region,
-               test_phone_tables_scroll_in_one_place):
+               test_phone_tables_scroll_in_one_place,
+               test_the_phone_navbar_drops_what_does_not_fit):
         fn()
         print(f"  ok  {fn.__name__}")
     print("css checks passed")

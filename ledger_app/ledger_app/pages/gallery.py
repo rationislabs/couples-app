@@ -15,15 +15,19 @@ if it survived one night.
 """
 from __future__ import annotations
 
+import asyncio
 import pathlib
 import re
 
 import reflex as rx
 from PIL import Image, ImageOps
+from starlette.responses import PlainTextResponse
 
 from ..core.ui import notice_toast
 
 MAX_PHOTOS = 100
+MAX_BYTES = 50_000_000             # one upload; phone photos are 3-18 MB
+MAX_REQUEST = 1_000_000_000        # one Upload click, every photo together (~50 phone photos)
 UPLOAD_ID = "gallery_upload"          # rx.upload ids must be literals, not state
 THUMBS = "thumbs"                     # a sub-directory, so it is never listed as a photo
 THUMB_PX = 480
@@ -37,6 +41,43 @@ EXTS = {e for exts in ACCEPT.values() for e in exts}
 # Uploads come only from the two of you over the tailnet, so the guard protects
 # against nobody here; lifted to a ceiling well above any real camera.
 Image.MAX_IMAGE_PIXELS = 400_000_000
+
+
+def capped_uploads(app):
+    """Refuse an upload over MAX_REQUEST before Starlette spools it to disk: the
+    per-photo MAX_BYTES check runs only once the whole body is stored. A body
+    without a Content-Length (a proxy may forward it chunked) is counted while
+    it is read, and cut off at the limit."""
+    async def guarded(scope, receive, send):
+        if not (scope["type"] == "http" and scope["method"] == "POST"
+                and scope["path"].startswith("/_upload")):
+            return await app(scope, receive, send)
+        length = dict(scope["headers"]).get(b"content-length")
+        if length is not None:
+            if not length.decode("latin-1").isdecimal():
+                return await PlainTextResponse("bad Content-Length", 400)(scope, receive, send)
+            if int(length) > MAX_REQUEST:
+                return await PlainTextResponse("upload too large", 413)(scope, receive, send)
+            return await app(scope, receive, send)   # the server reads no more than it says
+        read, refused = 0, False
+
+        async def counted():
+            nonlocal read, refused
+            message = await receive()
+            if message["type"] == "http.request" and not refused:
+                read += len(message.get("body", b""))
+                if read > MAX_REQUEST:
+                    refused = True
+                    await PlainTextResponse("upload too large", 413)(scope, receive, send)
+                    return {"type": "http.disconnect"}   # the handler stops reading
+            return message
+
+        async def unless_refused(message):
+            if not refused:                              # the 413 has been sent already
+                await send(message)
+
+        await app(scope, counted, unless_refused)
+    return guarded
 
 
 def _dir() -> pathlib.Path:
@@ -72,6 +113,17 @@ def _thumb(p: pathlib.Path) -> str:
     return f"{THUMBS}/{t.name}"
 
 
+def _listing() -> list[dict[str, str]]:
+    out = []
+    for p in _photos():
+        try:
+            thumb = _thumb(p)
+        except Exception:          # unreadable image: show the original, not a hole
+            thumb = p.name
+        out.append({"name": p.name, "thumb": thumb})
+    return out
+
+
 def _safe_name(raw: str) -> str:
     """The uploaded name, stripped of any directory part, never overwriting."""
     base = re.sub(r"[^A-Za-z0-9._-]+", "_",
@@ -99,19 +151,14 @@ class GalleryState(rx.State):
     def count_label(self) -> str:
         return f"{len(self.photos)} of {MAX_PHOTOS}"
 
-    def _refresh(self):
-        out = []
-        for p in _photos():
-            try:
-                thumb = _thumb(p)
-            except Exception:          # unreadable image: show the original, not a hole
-                thumb = p.name
-            out.append({"name": p.name, "thumb": thumb})
-        self.photos = out
+    async def _refresh(self):
+        # Thumbnails decode whole photos: in a thread, so the one backend
+        # worker keeps serving the other pages meanwhile.
+        self.photos = await asyncio.to_thread(_listing)
 
     @rx.event
-    def load(self):
-        self._refresh()
+    async def load(self):
+        await self._refresh()
         if self.full:
             self.notice = (f"The gallery is full — {MAX_PHOTOS} photos. "
                            "Delete some to make room for new ones.")
@@ -120,19 +167,34 @@ class GalleryState(rx.State):
     async def upload(self, files: list[rx.UploadFile]):
         room = MAX_PHOTOS - len(_photos())
         saved = skipped_full = skipped_type = 0
+        skipped_big = 0
         for f in files:
-            if pathlib.Path(f.name or "").suffix.lower() not in EXTS:
+            # The type check runs on the name we would save: "..jpg" becomes
+            # "jpg", which _photos() never lists, so it slipped past the cap.
+            name = _safe_name(f.name)
+            if pathlib.Path(name).suffix.lower() not in EXTS:
                 skipped_type += 1
                 continue
             if saved >= room:
                 skipped_full += 1
                 continue
-            (_dir() / _safe_name(f.name)).write_bytes(await f.read())
+            data = await f.read(MAX_BYTES + 1)
+            if len(data) > MAX_BYTES:
+                skipped_big += 1
+                continue
+            try:
+                with open(_dir() / name, "xb") as out:    # never over a photo saved meanwhile
+                    out.write(data)
+            except FileExistsError:
+                with open(_dir() / _safe_name(f.name), "xb") as out:
+                    out.write(data)
             saved += 1
-        self._refresh()
+        await self._refresh()
         parts = [f"added {saved} photo{'s' * (saved != 1)}"]
         if skipped_type:
             parts.append(f"{skipped_type} not a JPEG, PNG, WebP or GIF")
+        if skipped_big:
+            parts.append(f"{skipped_big} too large (over {MAX_BYTES // 1_000_000} MB)")
         if skipped_full:
             parts.append(f"{skipped_full} left out — the gallery holds {MAX_PHOTOS}. "
                          "Delete some to make room")
@@ -142,14 +204,14 @@ class GalleryState(rx.State):
         return rx.clear_selected_files(UPLOAD_ID)
 
     @rx.event
-    def delete(self, name: str):
+    async def delete(self, name: str):
         d = _dir().resolve()
         p = (d / name).resolve()
         if p.parent != d or not p.is_file():   # never anything outside gallery/
             return
         p.unlink()
         (d / THUMBS / f"{p.name}.jpg").unlink(missing_ok=True)
-        self._refresh()
+        await self._refresh()
         self.notice = f"deleted {name}"
 
 

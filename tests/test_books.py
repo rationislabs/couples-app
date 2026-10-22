@@ -13,6 +13,9 @@ import sys
 
 from sqlmodel import Session, select                     # noqa: E402
 
+import _db  # first: never the real ledger.db
+_db.migrate()
+
 from ledger_app.pages.books import BookState, SHELVES          # noqa: E402
 from ledger_app.core.models import Book                       # noqa: E402
 from ledger_app.core.state import ENGINE                      # noqa: E402

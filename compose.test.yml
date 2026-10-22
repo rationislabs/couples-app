@@ -5,6 +5,8 @@ services:
     image: ${IMAGE:-couples-app:test}
     environment:
       LEDGER_BIND_HOST: 0.0.0.0
+      LEDGER_ALLOWED_HOST: couples.example.ts.net
+      LEDGER_PUBLISHED_PORT: "3300"
     # Runs as uid 10001 and never needs root powers: drop them all.
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]

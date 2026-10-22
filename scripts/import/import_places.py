@@ -63,7 +63,7 @@ def name_from_canonical(url: str) -> str:
     name = parts[1] if len(parts) > 1 and parts[1] else parts[0]
     # A pin on an unnamed plot puts an address here — "Mill Road 78",
     # "Springfield 71123". Those end in a house number or a postcode, while a
-    # real name does not ("7burger", "220 Degrees", "3D Blacklight Minigolf"
+    # real name does not ("9pizza", "180 Grad", "4D Glow Golf"
     # all start with theirs). Reject the address so a hand label can win.
     return "" if re.search(r"\s\d[\d/ -]*$", name) else name
 

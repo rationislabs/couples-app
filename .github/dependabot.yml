@@ -25,3 +25,18 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 0
+  # Base images are pinned by digest; these keep the digests moving.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      docker:
+        patterns: ["*"]
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      docker_compose:
+        patterns: ["*"]

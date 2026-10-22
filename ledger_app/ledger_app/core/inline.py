@@ -39,7 +39,7 @@ def save(model, row_id: int, field: str, raw: str) -> str:
     """
     v = (raw or "").strip()
     if field == "rating":
-        if v and not (v.isdigit() and 1 <= int(v) <= RATING_MAX):
+        if v and not (v.isdecimal() and 1 <= int(v) <= RATING_MAX):
             return f"a rating is 1 to {RATING_MAX}, not “{v}”"
         value, attr = (int(v) if v else None), "rating"
     elif field == "notes":

@@ -9,8 +9,8 @@
 # Options:
 #   --db PATH     restore this backup (.gz or plain) into ledger_app/ledger.db
 #   --home LAT,LON  seed the home location of a new database. Without it the first-run page asks.
-#   --host NAME   write LEDGER_ALLOWED_HOST into .env. Without it Vite rejects
-#                 the request with a host error that never names the setting.
+#   --host NAME   write LEDGER_ALLOWED_HOST into .env: this box's <name>.<tailnet>.ts.net.
+#                 Without it the app refuses pages served from the tailnet name.
 #   --no-apt      skip the system packages
 #
 # What this cannot do for you, because neither is in the repository:
@@ -35,7 +35,7 @@ ALLOWED_HOST=""
 DO_APT=1
 while [ $# -gt 0 ]; do
   case "$1" in
-    --db) DB_ARCHIVE="${2:?--db needs a path}"; shift 2 ;;
+    --db) DB_ARCHIVE="$(realpath -- "${2:?--db needs a path}")"; shift 2 ;;
     --home) HOME_LATLON="${2:?--home needs \"lat,lon\"}"; shift 2 ;;
     --host) ALLOWED_HOST="${2:?--host needs a tailnet name}"; shift 2 ;;
     --no-apt) DO_APT=0; shift ;;
@@ -110,11 +110,23 @@ step "Database"
 if [ -f "$DB" ]; then
   ok "ledger.db present, left alone"
 elif [ -n "$DB_ARCHIVE" ]; then
+  # Through core/backup.py, which proves the archive opens and holds data
+  # before anything is written: a truncated copy must not become the
+  # ledger.db that every later run then leaves alone.
+  DB_ARCHIVE="$(realpath -- "$DB_ARCHIVE")"   # the restore runs from ledger_app/
+  gz="$DB_ARCHIVE"
   case "$DB_ARCHIVE" in
-    *.gz) gunzip -c "$DB_ARCHIVE" > "$DB" ;;
-    *)    cp "$DB_ARCHIVE" "$DB" ;;
+    *.gz) ;;
+    *) gz="$(mktemp --suffix=.db.gz)"; gzip -c "$DB_ARCHIVE" > "$gz" ;;
   esac
-  ok "restored from $DB_ARCHIVE"
+  if ( cd "$APP" && "$PY" -m ledger_app.core.backup restore "$gz" ); then
+    ok "restored from $DB_ARCHIVE"
+  else
+    rm -f "$DB"
+    warn "$DB_ARCHIVE did not verify; nothing restored"
+    exit 1
+  fi
+  [ "$gz" = "$DB_ARCHIVE" ] || rm -f "$gz"
 else
   warn "no ledger.db and no --db given. Starting empty."
   warn "To bring the real one across, on the old machine:"
@@ -160,8 +172,8 @@ set_env() {
 [ -n "$ALLOWED_HOST" ] && set_env LEDGER_ALLOWED_HOST "$ALLOWED_HOST"
 
 if ! grep -q "^LEDGER_ALLOWED_HOST=" "$ROOT/.env" 2>/dev/null; then
-  warn "LEDGER_ALLOWED_HOST is not set — Vite will reject requests to this"
-  warn "box's tailnet name. Re-run with --host <name>.ts.net."
+  warn "LEDGER_ALLOWED_HOST is not set — the app will refuse pages served from"
+  warn "this box's tailnet name. Re-run with --host <name>.<tailnet>.ts.net."
 fi
 
 # --- gitignored extras -------------------------------------------------------

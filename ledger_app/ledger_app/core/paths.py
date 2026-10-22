@@ -36,3 +36,19 @@ def json_dir() -> pathlib.Path:
 
 def backup_dir() -> pathlib.Path:
     return pathlib.Path(os.environ.get("LEDGER_BACKUP_DIR", ROOT / "backups"))
+
+
+def secrets_dir() -> pathlib.Path:
+    """Where a script may save a secret it was handed at run time (a rotated
+    refresh token) when there is no .env: the container has none."""
+    return _data() or APP
+
+
+def atomic_write_text(path: pathlib.Path, text: str, mode: int = 0o600) -> None:
+    """Write via a temp file and os.replace, so a crash mid-write never leaves
+    the file half-written."""
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(text)
+    os.replace(tmp, path)

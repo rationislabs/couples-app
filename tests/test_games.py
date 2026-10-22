@@ -8,6 +8,9 @@ import sys
 
 from sqlmodel import Session, select              # noqa: E402
 
+import _db  # first: never the real ledger.db
+_db.migrate()
+
 from ledger_app.pages.games import GameState            # noqa: E402
 from ledger_app.pages.home import HomeState             # noqa: E402
 from ledger_app.core.models import Game                # noqa: E402

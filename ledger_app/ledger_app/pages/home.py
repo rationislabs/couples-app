@@ -425,7 +425,7 @@ class HomeState(rx.State):
     def set_radius(self, label: str):
         """Takes the option text. 0 km means "any", which is the only setting
         that shows the places with no coordinates alongside the rest."""
-        digits = "".join(c for c in str(label) if c.isdigit())
+        digits = "".join(c for c in str(label) if c.isdecimal())
         self.radius_km = int(digits) if digits else 0
         self.near_only = self.radius_km > 0
         self.seed += 1

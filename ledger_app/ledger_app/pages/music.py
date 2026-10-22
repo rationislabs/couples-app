@@ -59,6 +59,7 @@ class MusicState(rx.State):
     pages: dict[str, int] = {}
     open_cards: list[str] = []
     staged: str = ""
+    staged_count: str = ""   # the count the preview showed; Apply uses this one
     """Which playlist has a previewed push. Apply is refused for anything else,
     so a write always follows a diff you have seen."""
     push_count: str = "10"
@@ -308,7 +309,7 @@ class MusicState(rx.State):
             if self.busy:
                 return
             self.busy, self.notice = True, "reading Spotify…"
-        ok, out = sync_io.run([str(sync_io.APP / ".venv/bin/python"),
+        ok, out = await sync_io.arun([str(sync_io.APP / ".venv/bin/python"),
                                str(sync_io.SCRIPTS / "data" / "spotify_sync.py"),
                                "--sync", "--apply"], sync_io.ROOT, timeout=1800)
         async with self:
@@ -335,7 +336,7 @@ class MusicState(rx.State):
             self.busy, self.notice = True, "fetching Last.fm tags…"
         py = str(sync_io.APP / ".venv/bin/python")
         script = str(sync_io.SCRIPTS / "data" / "vibe_tag.py")
-        ok, out = sync_io.run([py, script, "--tags"], sync_io.ROOT, timeout=3600)
+        ok, out = await sync_io.arun([py, script, "--tags"], sync_io.ROOT, timeout=3600)
         if not ok:
             async with self:
                 self.busy, self.job_log = False, out
@@ -343,7 +344,7 @@ class MusicState(rx.State):
             return
         async with self:
             self.notice = "scoring tracks against your playlists…"
-        ok2, out2 = sync_io.run([py, script, "--vibes", "--apply"],
+        ok2, out2 = await sync_io.arun([py, script, "--vibes", "--apply"],
                                 sync_io.ROOT, timeout=900)
         async with self:
             self.busy = False
@@ -361,13 +362,15 @@ class MusicState(rx.State):
             if self.busy:
                 return
             self.busy, self.notice = True, f"previewing an append to {name}…"
-        ok, out = sync_io.run([str(sync_io.APP / ".venv/bin/python"),
+            count = self.push_count
+        ok, out = await sync_io.arun([str(sync_io.APP / ".venv/bin/python"),
                                str(sync_io.SCRIPTS / "data" / "spotify_push.py"),
-                               "--add", name, "--count", self.push_count],
+                               "--add", name, "--count", count],
                               sync_io.ROOT, timeout=300)
         async with self:
             self.busy, self.job_log = False, out
             self.staged = name if ok else ""
+            self.staged_count = count
             self.notice = (f"previewed {name} — press Apply to write it"
                            if ok else "preview failed — see the log")
 
@@ -378,11 +381,11 @@ class MusicState(rx.State):
             if self.busy or not self.staged:
                 self.notice = "preview a playlist first"
                 return
-            name = self.staged
+            name, count = self.staged, self.staged_count
             self.busy, self.notice = True, f"appending to {name}…"
-        ok, out = sync_io.run([str(sync_io.APP / ".venv/bin/python"),
+        ok, out = await sync_io.arun([str(sync_io.APP / ".venv/bin/python"),
                                str(sync_io.SCRIPTS / "data" / "spotify_push.py"),
-                               "--add", name, "--count", self.push_count, "--apply"],
+                               "--add", name, "--count", count, "--apply"],
                               sync_io.ROOT, timeout=600)
         async with self:
             self.busy, self.job_log, self.staged = False, out, ""
@@ -396,7 +399,7 @@ class MusicState(rx.State):
             if self.busy:
                 return
             self.busy, self.notice = True, f"finding tracks that fit {name}…"
-        ok, out = sync_io.run([str(sync_io.APP / ".venv/bin/python"),
+        ok, out = await sync_io.arun([str(sync_io.APP / ".venv/bin/python"),
                                str(sync_io.SCRIPTS / "data" / "vibe_tag.py"), "--suggest", name],
                               sync_io.ROOT, timeout=300)
         async with self:

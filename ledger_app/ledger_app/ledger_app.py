@@ -17,6 +17,8 @@ from .pages import recipes as R
 from .pages import household as HH
 from .core import verdicts as V
 from .core import backup as BKP
+from .core import origin
+from .pages import gallery
 from .core.profile import ProfileState
 from .pages import setup as SU
 from .core import inline as IN
@@ -481,7 +483,8 @@ def index() -> rx.Component:
 app = rx.App(stylesheets=["/ledger.css"],
              # head_components, not `scripts`: rx.App has no scripts argument in
              # 0.9. defer keeps it from blocking the first paint.
-             head_components=[rx.el.script(src="/keys.js", defer=True)])
+             head_components=[rx.el.script(src="/keys.js", defer=True)],
+             api_transformer=lambda api: origin.trusted_hosts(gallery.capped_uploads(api)))
 # Nightly backup inside the app process (container only; see nightly_loop).
 app.register_lifespan_task(BKP.nightly_loop)
 

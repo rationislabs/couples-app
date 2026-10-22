@@ -140,7 +140,7 @@ class WatchState(SQLModel, table=True):
 class Recipe(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
-    slug: str = Field(index=True)            # the /recipes/<slug> route
+    slug: str = Field(index=True, unique=True)  # the /recipes/<slug> route
     source_url: str = ""
     servings: Optional[int] = None
     total_minutes: Optional[int] = None      # shown as "3h 20m"

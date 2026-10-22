@@ -32,13 +32,32 @@ bad=$(grep -rnE '"/(tmp|home)/[^"]+"' --include='*.py' --include='*.sh' "$REPO" 
 check "no hardcoded /tmp or /home paths in source" "[ -z \"\$bad\" ]"
 [ -n "$bad" ] && printf '       %s\n' "$bad"
 
-# The --db restore path must handle both a .gz and a plain file.
+# The --db restore goes through core/backup.py, which verifies the archive
+# before it replaces anything: a truncated backup must not leave a broken
+# ledger.db behind that the next run then keeps ("present, left alone").
+# Runs only the Database step, against a throwaway directory.
 tmp=$(mktemp -d)
-printf 'x' > "$tmp/plain.db"; gzip -c "$tmp/plain.db" > "$tmp/arch.db.gz"
-case "$tmp/arch.db.gz" in *.gz) gunzip -c "$tmp/arch.db.gz" > "$tmp/out1" ;; esac
-case "$tmp/plain.db"   in *.gz) : ;; *) cp "$tmp/plain.db" "$tmp/out2" ;; esac
-check "restores a .gz backup"   "[ -s '$tmp/out1' ]"
-check "restores a plain file"   "[ -s '$tmp/out2' ]"
+block=$(sed -n '/^step "Database"/,/^step "Migrations"/p' "$SRC" | sed '$d')
+# Its own bash process: errexit is ignored in a subshell run under `!`.
+{ echo 'set -euo pipefail'
+  echo 'step() { :; }; ok() { :; }; warn() { :; }'
+  echo 'APP="$ROOT/ledger_app"; PY="$APP/.venv/bin/python"; DB="$LEDGER_DATA_DIR/ledger.db"'
+  printf '%s\n' "$block"; } > "$tmp/db_step.sh"
+run_db_step() {  # $1 = archive
+  mkdir -p "$tmp/data"
+  ROOT="$(dirname "$SRC")" LEDGER_DATA_DIR="$tmp/data" DB_ARCHIVE="$1" \
+    bash "$tmp/db_step.sh" >/dev/null 2>&1
+}
+printf 'not a database' | gzip -c | head -c 20 > "$tmp/truncated.db.gz"
+printf 'not a database' > "$tmp/plain.db"
+check "uses the verified restore"           "printf '%s' \"\$block\" | grep -q 'ledger_app.core.backup restore'"
+check "a truncated .gz fails the step"      "! run_db_step '$tmp/truncated.db.gz'"
+check "and leaves no ledger.db behind"      "[ ! -e '$tmp/data/ledger.db' ]"
+check "a plain non-database file fails too" "! run_db_step '$tmp/plain.db' && [ ! -e '$tmp/data/ledger.db' ]"
+# A good archive given as a relative path restores (the step runs from ledger_app/).
+"$(dirname "$SRC")/ledger_app/.venv/bin/python" -c "import sqlite3,sys; c=sqlite3.connect(sys.argv[1]); c.execute('create table t(x)'); c.commit()" "$tmp/good.db"
+gzip -c "$tmp/good.db" > "$tmp/good.db.gz"
+check "a valid relative .gz restores" "(cd '$tmp' && run_db_step good.db.gz) && [ -s '$tmp/data/ledger.db' ]"
 rm -rf "$tmp"
 
 [ $fail -eq 0 ] && echo "setup checks passed" || echo "setup checks FAILED"

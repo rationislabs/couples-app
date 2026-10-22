@@ -2,6 +2,8 @@
 # The only copy of the API keys. Committing this once means rotating every key,
 # because git keeps it in history even after you delete the file.
 .env
+secrets.enc
+spotify_refresh_token
 .env.*
 !.env.example
 *.pem

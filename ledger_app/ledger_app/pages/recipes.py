@@ -5,6 +5,7 @@ Recipes live only in the database, so ./backup_db.sh is their only backup.
 """
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import datetime as dt
 import json
@@ -12,9 +13,11 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from html import unescape as html_unescape
 
 import reflex as rx
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, delete, select
 
 from ..core.models import (CookLog, MealPlan, Recipe, RecipeIngredient, RecipeStep,
@@ -52,6 +55,33 @@ FRACTIONS = {"½": 0.5, "⅓": 1 / 3, "⅔": 2 / 3, "¼": 0.25, "¾": 0.75, "⅛
 def slugify(name: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
     return s or "recipe"
+
+
+def _commit_with_free_slug(write: Callable[[Session], None]) -> None:
+    """write(s), then commit. A save running at the same time can take the slug
+    unique_slug picked; the second try picks the next free one."""
+    for last in (False, True):
+        with Session(ENGINE) as s:
+            try:
+                write(s)
+                s.commit()
+                return
+            except IntegrityError:
+                if last:
+                    raise
+
+
+def unique_slug(s: Session, name: str) -> str:
+    """slugify(name), or with -2, -3 ... appended: "Chili!" next to "Chili"."""
+    base = slugify(name)
+    taken = set(s.exec(select(Recipe.slug).where(
+        (Recipe.slug == base) | Recipe.slug.like(f"{base}-%"))).all())
+    if base not in taken:
+        return base
+    n = 2
+    while f"{base}-{n}" in taken:
+        n += 1
+    return f"{base}-{n}"
 
 
 def fmt_minutes(m: int | None) -> str:
@@ -146,6 +176,21 @@ def _meta(html: str, *keys: str) -> str:
     return ""
 
 
+MAX_PAGE = 5_000_000  # bytes; a recipe page is a few hundred KB
+
+
+class _WebOnlyRedirect(urllib.request.HTTPRedirectHandler):
+    """urllib follows a redirect to ftp:// on its own; an import stays on the web."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urllib.parse.urlsplit(newurl).scheme.lower() not in ("http", "https"):
+            raise ValueError("the page redirected away from http(s)")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_WebOnlyRedirect)
+
+
 def scrape(url: str) -> dict:
     """Pull a recipe out of a page's schema.org JSON-LD.
 
@@ -154,13 +199,18 @@ def scrape(url: str) -> dict:
     recipe can still be created with its link — an import that refuses outright
     loses the URL you just pasted, which is the one thing you cannot retype.
     """
+    if urllib.parse.urlsplit(url).scheme.lower() not in ("http", "https"):
+        raise ValueError("only http(s) links can be imported")
     req = urllib.request.Request(url, headers={
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/126.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml",
         "Accept-Language": "en-US,en;q=0.9"})
-    with urllib.request.urlopen(req, timeout=25) as r:
-        html = r.read().decode("utf-8", "replace")
+    with _OPENER.open(req, timeout=25) as r:
+        raw = r.read(MAX_PAGE + 1)
+    if len(raw) > MAX_PAGE:
+        raise ValueError("page too large to import")
+    html = raw.decode("utf-8", "replace")
     for block in re.findall(
             r'<script[^>]+application/ld\+json[^>]*>(.*?)</script>', html, re.S | re.I):
         try:
@@ -414,7 +464,7 @@ class RecipeState(rx.State):
             elif field == "source_url":
                 r.source_url = v
             elif field in ("total_minutes", "servings"):   # rating: set_inline
-                if v and not v.isdigit():
+                if v and not v.isdecimal():
                     self.notice = f"{v} is not a number"
                     return
                 n = int(v) if v else None
@@ -504,8 +554,9 @@ class RecipeState(rx.State):
             if s.exec(select(Recipe).where(Recipe.name == name)).first():
                 self.notice = f"“{name}” already exists"
                 return
-            s.add(Recipe(name=name, slug=slugify(name), source_url=self.new_url.strip()))
-            s.commit()
+        url = self.new_url.strip()
+        _commit_with_free_slug(
+            lambda s: s.add(Recipe(name=name, slug=unique_slug(s, name), source_url=url)))
         self.new_name = self.new_url = ""
         self.load()
         self.notice = f"added “{name}”"
@@ -519,7 +570,7 @@ class RecipeState(rx.State):
             self.busy, self.notice = True, "reading the page…"
             url = self.new_url.strip()
         try:
-            got = scrape(url)
+            got = await asyncio.to_thread(scrape, url)
         except urllib.error.HTTPError as e:
             # 403 from Cloudflare-fronted sites is common; the link is still
             # worth keeping, so save it rather than losing what you pasted
@@ -534,10 +585,12 @@ class RecipeState(rx.State):
         name = (self.new_name.strip() or got["name"]
                 or urllib.parse.urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
                    .replace("-", " ").title() or url)[:120]
-        with Session(ENGINE) as s:
-            r = s.exec(select(Recipe).where(Recipe.slug == slugify(name))).first()
+        def write(s: Session) -> None:
+            # The same page again updates its recipe; a different page whose
+            # title slugifies the same is a different recipe.
+            r = s.exec(select(Recipe).where(Recipe.source_url == url)).first()
             if not r:
-                r = Recipe(name=name, slug=slugify(name))
+                r = Recipe(name=name, slug=unique_slug(s, name))
             r.source_url = url
             r.total_minutes = got["minutes"] or r.total_minutes
             r.servings = got["servings"] or r.servings
@@ -553,7 +606,13 @@ class RecipeState(rx.State):
                                        qty=qty, unit=unit, item=item))
             for i, text in enumerate(got["steps"]):
                 s.add(RecipeStep(recipe_id=r.id, sort_order=i, text=text))
-            s.commit()
+
+        try:
+            _commit_with_free_slug(write)
+        except Exception as e:  # never leave the Import button locked
+            async with self:
+                self.busy, self.notice = False, f"could not save that recipe: {e}"
+            return
         async with self:
             self.busy, self.new_name, self.new_url = False, "", ""
             self.load()

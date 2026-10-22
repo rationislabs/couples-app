@@ -9,6 +9,8 @@ the container keep every byte of user data on one volume.
 import os
 import pathlib
 
+import _db  # noqa: F401  (first: never the real ledger.db)
+
 from ledger_app.core import paths
 
 REPO = pathlib.Path(__file__).resolve().parents[1]

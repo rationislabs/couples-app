@@ -8,6 +8,9 @@ import sys
 
 from sqlmodel import Session, select                       # noqa: E402
 
+import _db  # first: never the real ledger.db
+_db.migrate()
+
 from ledger_app.pages.convo import AUDIENCES, DEPTHS             # noqa: E402
 from ledger_app.core.models import ConvoQuestion                # noqa: E402
 from ledger_app.core.state import ENGINE                        # noqa: E402

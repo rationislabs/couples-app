@@ -3,6 +3,7 @@
 # Usage: ./ledger.sh {start|dev|stop|restart|restart-dev|watch|status|check|open|logs}
 #   start = prod build, dev = hot reload. Both bind loopback only.
 set -euo pipefail
+umask 077   # ledger.db, backups and photos are private: owner-only
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIR="$ROOT/ledger_app"
 

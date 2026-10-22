@@ -310,7 +310,7 @@ class PlantState(rx.State):
             self.notice = "a plant needs a name"
             return
         days = self.new_days.strip()
-        if days and not days.isdigit():
+        if days and not days.isdecimal():
             self.notice = f"'{days}' is not a number of days"
             return
         with Session(ENGINE) as s:
@@ -407,7 +407,7 @@ class PlantState(rx.State):
                     return
                 p.name = v
             elif field == "water_days":
-                if v and not v.isdigit():
+                if v and not v.isdecimal():
                     self.notice = f"'{v}' is not a number of days"
                     return
                 p.water_days = int(v) if v else None

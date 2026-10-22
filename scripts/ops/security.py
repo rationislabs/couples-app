@@ -3,7 +3,6 @@
 
     ./ledger_app/.venv/bin/python security.py --check      # posture report
     ./ledger_app/.venv/bin/python security.py --encrypt    # .env -> secrets.enc
-    ./ledger_app/.venv/bin/python security.py --shred-env  # remove plaintext .env
     ./ledger_app/.venv/bin/python security.py --rekey      # new passphrase
 
 What this protects against, and what it does not
@@ -25,12 +24,12 @@ where `ledger.db` (every saved place, the date log and the private pages) is
 readable by anyone who takes the machine. Full-disk encryption fixes that;
 this file cannot.
 
-Resolution order used by the app
---------------------------------
-1. a real environment variable, so a deployment can inject secrets and never
-   place them on disk (systemd `LoadCredential`, a container secret);
-2. `secrets.enc`, decrypted with the passphrase from the keyring;
-3. plaintext `.env`, which still works but reports itself as unprotected.
+What reads it
+-------------
+Nothing yet: the app and every script under scripts/ read real environment
+variables and the plaintext `.env`. `secrets.enc` is an encrypted copy of
+`.env` for backups and moves; `load()` below shows the order a caller would
+use (environment, then `secrets.enc`, then `.env`). Keep `.env` in place.
 """
 from __future__ import annotations
 
@@ -269,34 +268,7 @@ def cmd_encrypt() -> int:
     print(f"wrote {ENC_FILE.name} (0600), verified it decrypts")
     print("passphrase saved to the OS keyring" if stored else
           "could not reach the OS keyring — set LEDGER_PASSPHRASE to run headless")
-    print(f"\n{ENV_FILE.name} is still there and still plaintext. "
-          f"Remove it with:\n  python security.py --shred-env")
-    return 0
-
-
-def cmd_shred_env() -> int:
-    if not ENC_FILE.exists():
-        print("refusing: no secrets.enc, so .env is the only copy")
-        return 1
-    plain = _parse_env(ENV_FILE)
-    if not plain:
-        print(f"{ENV_FILE.name} is already gone")
-        return 0
-    if decrypt_store() != plain:
-        print("refusing: secrets.enc does not match .env exactly. "
-              "Run --rekey after reconciling them.")
-        return 1
-    # Overwrite before unlinking. On a copy-on-write or flash filesystem this is
-    # not a guarantee, which is another argument for encrypting the disk.
-    size = ENV_FILE.stat().st_size
-    with open(ENV_FILE, "r+b") as fh:
-        fh.write(_secrets.token_bytes(size))
-        fh.flush()
-        os.fsync(fh.fileno())
-    ENV_FILE.unlink()
-    print(f"overwrote and removed {ENV_FILE.name}; secrets.enc is now the only copy")
-    print("keep a backup of the passphrase somewhere offline — losing it means "
-          "re-issuing every token")
+    print(f"\n{ENV_FILE.name} stays: the app reads it, not {ENC_FILE.name}.")
     return 0
 
 
@@ -380,8 +352,7 @@ def cmd_check() -> int:
 
 
 def main(argv: list[str]) -> int:
-    commands = {"--encrypt": cmd_encrypt, "--shred-env": cmd_shred_env,
-                "--rekey": cmd_rekey, "--check": cmd_check}
+    commands = {"--encrypt": cmd_encrypt, "--rekey": cmd_rekey, "--check": cmd_check}
     if len(argv) != 1 or argv[0] not in commands:
         print(__doc__)
         return 2

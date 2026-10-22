@@ -7,7 +7,7 @@
 # no login; your tailnet is the login.
 services:
   ts:
-    image: tailscale/tailscale:stable
+    image: tailscale/tailscale:stable@sha256:b11583ad2e93e4671128538c88cf11f460444a5d7e449311dd1933a400ab849d
     hostname: ${TS_HOSTNAME:-couples}
     environment:
       TS_AUTHKEY: ${TS_AUTHKEY:?set TS_AUTHKEY in .env}
@@ -35,6 +35,7 @@ services:
       - SPOTIFY_REFRESH_TOKEN
       - LASTFM_API_KEY
       - TZ
+      - LEDGER_ALLOWED_HOST=${LEDGER_ALLOWED_HOST:?set LEDGER_ALLOWED_HOST in .env to couples.<your-tailnet>.ts.net}
       - LEDGER_BACKUP_AT
       - LEDGER_BACKUP_KEEP
     volumes:

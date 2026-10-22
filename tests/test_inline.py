@@ -11,6 +11,9 @@ import sys
 
 from sqlmodel import Session, select
 
+import _db  # first: never the real ledger.db
+_db.migrate()
+
 from ledger_app.core import inline as IN
 from ledger_app.core.models import Game, Shop, Title, WatchState
 from ledger_app.core.state import ENGINE, LedgerState

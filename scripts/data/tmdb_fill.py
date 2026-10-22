@@ -25,7 +25,7 @@ import difflib, json, os, pathlib, re, sys, time, urllib.parse, urllib.request
 
 from sqlmodel import Session, create_engine, select
 from ledger_app.core.models import Genre, Title, TitleGenre  # noqa: E402
-from ledger_app.core.paths import db_path, json_dir  # noqa: E402
+from ledger_app.core.paths import atomic_write_text, db_path, json_dir  # noqa: E402
 
 APP = pathlib.Path(__file__).resolve().parents[2] / "ledger_app"
 ENGINE = create_engine(f"sqlite:///{db_path()}")
@@ -275,7 +275,7 @@ def main() -> None:
             print(f"  {n[:36]:38s} ({m}) {why}")
         if len(skipped) > 18: print(f"  … and {len(skipped)-18} more")
 
-    AMBIG.write_text(json.dumps(
+    atomic_write_text(AMBIG, json.dumps(
         {n: {"medium": m, "why": why,
              "candidates": [{"title": r["_title"], "year": r["_year"] or "",
                              "kind": r["_kind"], "votes": r["_votes"],
@@ -285,7 +285,7 @@ def main() -> None:
                                         if g in GENRES]}
                             for r in cands]}
          for n, m, why, cands in skipped if cands},
-        indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")
+        indent=2, ensure_ascii=False, sort_keys=True), mode=0o644)
     print(f"wrote {AMBIG.name} — {sum(1 for _n, _m, _w, c in skipped if c)} titles await a pick")
 
     if not APPLY:

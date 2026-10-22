@@ -7,6 +7,8 @@ only a placeholder, so each read as "button" or "edit text".
 """
 import reflex as rx
 
+import _db  # noqa: F401  (first: never the real ledger.db)
+
 from ledger_app.core import inline as IN, verdicts as V        # noqa: E402
 
 

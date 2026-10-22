@@ -8,6 +8,7 @@ Nothing here knows about a page. A caller passes `kind` and a row id and gets
 back a pair of controls; that is the whole interface.
 """
 import reflex as rx
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from .models import Verdict
@@ -62,18 +63,26 @@ def write(kind: str, row_id: int, person: str, value: str) -> None:
     if person not in PEOPLE or value not in VALUES:
         return
     uid = int(person)
-    with Session(_engine()) as s:
-        row = s.exec(select(Verdict).where(
-            Verdict.kind == kind, Verdict.row_id == row_id,
-            Verdict.user_id == uid)).first()
-        if row is None:
-            s.add(Verdict(user_id=uid, kind=kind, row_id=row_id, value=value))
-        elif row.value == value:
-            s.delete(row)
-        else:
-            row.value = value
-            s.add(row)
-        s.commit()
+    # Twice at most: another tab can insert between our read and our insert,
+    # and the unique index then rejects ours. The second pass sees its row.
+    for attempt in (1, 2):
+        with Session(_engine()) as s:
+            row = s.exec(select(Verdict).where(
+                Verdict.kind == kind, Verdict.row_id == row_id,
+                Verdict.user_id == uid)).first()
+            if row is None:
+                s.add(Verdict(user_id=uid, kind=kind, row_id=row_id, value=value))
+            elif row.value == value:
+                s.delete(row)
+            else:
+                row.value = value
+                s.add(row)
+            try:
+                s.commit()
+                return
+            except IntegrityError:
+                if attempt == 2:
+                    raise
 
 
 async def write_as(state: rx.State, kind: str, row_id: int, person: str, value: str) -> bool:

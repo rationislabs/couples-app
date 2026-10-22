@@ -15,6 +15,7 @@ separate script, so a sync can never damage an account.
 from __future__ import annotations
 
 import base64
+import hashlib
 import http.server
 import json
 import os
@@ -31,7 +32,7 @@ from datetime import datetime
 
 from sqlmodel import Session, create_engine, delete, select   # noqa: E402
 from ledger_app.core.models import Playlist, PlaylistTrack, Track  # noqa: E402
-from ledger_app.core.paths import db_path  # noqa: E402
+from ledger_app.core.paths import atomic_write_text, db_path, secrets_dir  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parents[2]
 ENV = HERE / ".env"
@@ -57,10 +58,31 @@ def env() -> dict:
                 out[k.strip()] = v.strip()
     # The container passes keys as environment variables; they win over the file.
     out.update({k: v for k, v in os.environ.items() if k.startswith("SPOTIFY_") and v})
+    # ...except a refresh token Spotify rotated since: the passed one is stale. The file
+    # names the token it replaced; a different one in the environment is a re-authorisation.
+    if token_file().exists():
+        replaced, _, rotated = token_file().read_text(encoding="utf-8").partition("\n")
+        if replaced == _fingerprint(os.environ.get("SPOTIFY_REFRESH_TOKEN", "")):
+            out["SPOTIFY_REFRESH_TOKEN"] = rotated.strip()
     return out
 
 
+def _fingerprint(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def token_file() -> pathlib.Path:
+    return secrets_dir() / "spotify_refresh_token"
+
+
 def set_env(key: str, value: str) -> None:
+    """Save a value the script was handed (a rotated refresh token). Into .env
+    when there is one, else beside the database: the container has no .env,
+    and losing a rotated token means running --auth again."""
+    if not ENV.exists():
+        passed = _fingerprint(os.environ.get("SPOTIFY_REFRESH_TOKEN", ""))
+        atomic_write_text(token_file(), f"{passed}\n{value}\n")
+        return
     lines = ENV.read_text(encoding="utf-8").splitlines()
     for i, line in enumerate(lines):
         if line.startswith(f"{key}="):
@@ -68,7 +90,8 @@ def set_env(key: str, value: str) -> None:
             break
     else:
         lines.append(f"{key}={value}")
-    ENV.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    atomic_write_text(ENV, "\n".join(lines) + "\n")
+    token_file().unlink(missing_ok=True)  # .env holds the newest now
 
 
 def basic_auth() -> str:

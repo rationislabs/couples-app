@@ -11,6 +11,8 @@ import pathlib
 import re
 import sys
 
+import _db  # noqa: F401  (first: never the real ledger.db)
+
 CSS = pathlib.Path(__file__).resolve().parents[1] / "ledger_app" / "assets" / "ledger.css"
 BEGIN = "/* == GENERATED: page ramps."
 END = "/* == END GENERATED == */"

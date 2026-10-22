@@ -2,6 +2,7 @@ import os as _os
 
 import reflex as rx
 
+from ledger_app.core.origin import allowed_hosts as _allowed_hosts, allowed_origins as _allowed_origins
 from ledger_app.core.paths import db_path as _db_path, gallery_dir as _gallery_dir
 
 # Uploads land in gallery/ (under LEDGER_DATA_DIR when set). Set here rather than in
@@ -58,9 +59,10 @@ config = rx.Config(
     # Host, which re-opens DNS rebinding against an app that has no login.
     # The tailnet name comes only from LEDGER_ALLOWED_HOST, and only matters in
     # dev mode (prod serves no Vite).
-    vite_allowed_hosts=[
-        h for h in (_os.environ.get("LEDGER_ALLOWED_HOST", ""), "localhost", "127.0.0.1") if h
-    ],
+    vite_allowed_hosts=_allowed_hosts(),
+    # The websocket and API accept only these origins; Reflex's default is "*"
+    # (core/origin.py).
+    cors_allowed_origins=_allowed_origins(),
     show_built_with_reflex=False,
     plugins=[
         rx.plugins.SitemapPlugin(),

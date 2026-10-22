@@ -7,6 +7,9 @@ Rows are named with a "zz-lib-test" prefix and deleted at the end.
 """
 from sqlmodel import Session, select                     # noqa: E402
 
+import _db  # first: never the real ledger.db
+_db.migrate()
+
 from ledger_app.core.models import Title, TitleGenre          # noqa: E402
 from ledger_app.core.state import ENGINE, LedgerState         # noqa: E402
 

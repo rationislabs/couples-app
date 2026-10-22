@@ -7,6 +7,7 @@
 #
 # Env: LEDGER_BACKUP_DIR (default ./backups), LEDGER_BACKUP_KEEP (default 30).
 set -euo pipefail
+umask 077   # backups hold the whole ledger: owner-only
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY="$DIR/ledger_app/.venv/bin/python"
 cd "$DIR/ledger_app"   # the package resolves from here

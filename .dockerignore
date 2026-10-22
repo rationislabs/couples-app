@@ -13,6 +13,8 @@ json
 csv
 places-inbox.txt
 .env
+secrets.enc
+spotify_refresh_token
 .env.*
 !.env.example
 *.pem

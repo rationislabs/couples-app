@@ -90,6 +90,18 @@ if (home) L.circleMarker(home, {radius:7,color:'#E8EDF5',weight:2,fillColor:'#E8
 // Visited was drawn dim grey, which read as "faded out" rather than "been
 // there". Green is the one colour in this app that means done.
 const DONE = '#5FBE8C', TODO = '#F2A93B';
+// Names come from Takeout and OpenStreetMap: text nodes only, never markup.
+function popup(p) {
+  const d = document.createElement('div'), b = document.createElement('b');
+  b.textContent = p.n;
+  d.append(b, document.createElement('br'), p.t, document.createElement('br'), `${p.c} ${p.k}`);
+  if (/^https?:\\/\\//.test(p.u || '')) {  // web links only, never javascript:
+    const a = document.createElement('a');
+    a.href = p.u; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'open in Maps';
+    d.append(document.createElement('br'), a);
+  }
+  return d;
+}
 const group = L.markerClusterGroup({
   maxClusterRadius: 45, showCoverageOnHover: false,
   spiderfyOnMaxZoom: true, disableClusteringAtZoom: 15,
@@ -105,14 +117,16 @@ for (const p of pins) {
   const hue = p.b ? DONE : TODO;
   L.circleMarker([p.a,p.o], {radius:6,color:hue,weight:1.5,been:!!p.b,
     fillColor:hue,fillOpacity:p.b?0.9:0.55})
-   .bindPopup(`<b>${p.n}</b><br>${p.t}<br>${p.c} ${p.k}` +
-              (p.u?`<br><a href="${p.u}" target="_blank">open in Maps</a>`:''))
+   .bindPopup(popup(p))
    .addTo(group);
 }
 if (pins.length) map.fitBounds(group.getBounds().pad(0.15));
 </script></body></html>"""
-    doc = doc.replace("__PINS__", json.dumps(pins, separators=(",", ":"))
-                      ).replace("__HOME__", json.dumps(list(centre) if centre else None))
+    # "<" escaped so a name cannot close the <script> it is embedded in.
+    def js(v):
+        return json.dumps(v, separators=(",", ":")).replace("<", "\\u003c")
+
+    doc = doc.replace("__PINS__", js(pins)).replace("__HOME__", js(list(centre) if centre else None))
     return doc, len(pins)
 
 
@@ -840,7 +854,7 @@ class DateState(rx.State):
             if self.busy:
                 return
             self.busy, self.notice = True, "reading Takeout…"
-        ok, out = sync_io.run(
+        ok, out = await sync_io.arun(
             [str(sync_io.APP / ".venv/bin/python"), str(sync_io.SCRIPTS / "import" / "import_places.py"),
              "--takeout", "--apply"],
             sync_io.ROOT, timeout=900)
@@ -1101,7 +1115,7 @@ def _map_block() -> rx.Component:
                     # which React drops — the iframe renders at full size and
                     # is completely blank.
                     src_doc=DateState.map_html,
-                    sandbox="allow-scripts",
+                    sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox",
                     # A fixed 440px map is half a desktop window and most of a
                     # phone. Height follows the viewport between two sane ends.
                     style={"width": "100%",

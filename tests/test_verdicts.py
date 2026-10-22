@@ -139,6 +139,37 @@ def test_renaming_a_person_keeps_their_votes():
         H.set_names("Alex", "Sam")
 
 
+def test_a_second_tab_voting_at_the_same_moment_is_not_an_error():
+    """Both tabs read "no vote yet", both insert: the unique index rejected the
+    second with IntegrityError. The vote lands; the other tab's wins."""
+    real = V.Session
+
+    class Racing(real):
+        raced = False
+
+        def exec(self, stmt, *a, **k):
+            res = super().exec(stmt, *a, **k)
+            if Racing.raced or not hasattr(res, "first"):
+                return res
+            Racing.raced = True
+            row = res.first()
+            with real(ENGINE) as other:               # the other tab, in between
+                other.add(Verdict(user_id=1, kind=KIND, row_id=ROW, value=V.DOWN))
+                other.commit()
+
+            class Done:
+                def first(self_inner):
+                    return row
+            return Done()
+
+    V.Session = Racing
+    try:
+        V.write(KIND, ROW, "1", V.UP)
+    finally:
+        V.Session = real
+    assert held() == {"1": "up"}, held()
+
+
 if __name__ == "__main__":
     cleanup()
     try:
@@ -149,7 +180,8 @@ if __name__ == "__main__":
                    test_an_unknown_person_or_value_is_refused,
                    test_read_of_an_empty_page_is_not_a_query,
                    test_renaming_a_person_keeps_their_votes,
-                   test_every_voting_table_filters_by_vote_and_by_done):
+                   test_every_voting_table_filters_by_vote_and_by_done,
+                   test_a_second_tab_voting_at_the_same_moment_is_not_an_error):
             cleanup()
             fn()
             print(f"  ok  {fn.__name__}")

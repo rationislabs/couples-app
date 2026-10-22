@@ -55,7 +55,7 @@ bad=$(mktemp -d); printf 'not a backup' > "$bad/bad.db.gz"; chmod -R a+rX "$bad"
 check "restore rejects a bad file" \
   '! docker run --rm -v "$bad:/in:ro" "$IMAGE" restore /in/bad.db.gz >/dev/null 2>&1'
 rm -rf "$bad"
-envf=$(mktemp); printf 'TS_AUTHKEY=x\nTMDB_API_KEY=y\n' > "$envf"
+envf=$(mktemp); printf 'TS_AUTHKEY=x\nTMDB_API_KEY=y\nLEDGER_ALLOWED_HOST=couples.example.ts.net\n' > "$envf"
 check "compose.yml does not hand TS_AUTHKEY to the app" \
   'docker compose -f compose.yml --env-file "$envf" config --format json | python3 -c "import json,sys; e=json.load(sys.stdin)[\"services\"][\"app\"][\"environment\"]; sys.exit(not (\"TMDB_API_KEY\" in e and \"TS_AUTHKEY\" not in e))"'
 rm -f "$envf"

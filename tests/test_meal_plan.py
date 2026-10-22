@@ -3,6 +3,9 @@ other week (it called shift_week(0), which moved nowhere).
 
     ./.venv/bin/python test_meal_plan.py
 """
+import _db  # first: never the real ledger.db
+_db.migrate()
+
 from ledger_app.pages.recipes import RecipeState              # noqa: E402
 
 

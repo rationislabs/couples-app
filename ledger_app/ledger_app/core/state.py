@@ -21,7 +21,7 @@ from . import verdicts as V
 from . import inline as IN
 from .models import Genre, ListDef, Membership, Title, TitleGenre, WatchState, Progress
 
-from .paths import db_path
+from .paths import atomic_write_text, db_path
 
 ENGINE = create_engine(f"sqlite:///{db_path()}")
 
@@ -472,7 +472,7 @@ class LedgerState(rx.State):
         `episodes` are per-user progress and live on WatchState.
         """
         raw = (raw or "").strip()
-        if raw and not raw.isdigit():
+        if raw and not raw.isdecimal():
             self.notice = f"“{raw}” is not a number"
             return
         val = int(raw) if raw else None
@@ -656,14 +656,15 @@ class LedgerState(rx.State):
         self._ambig = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
         self.amb_index = 0
 
-    def _write_ambig(self):
-        (sync_io.DATA / "tmdb-ambiguous.json").write_text(
-            json.dumps(self._ambig, indent=2, ensure_ascii=False, sort_keys=True),
-            encoding="utf-8")
-
     def _drop_ambig(self):
-        self._ambig = {k: v for k, v in self._ambig.items() if k != self.amb_name}
-        self._write_ambig()
+        """Drop the current title from the file as it is now, not from this
+        tab's copy: another tab or a tmdb_fill.py run may have changed it."""
+        name = self.amb_name
+        f = sync_io.DATA / "tmdb-ambiguous.json"
+        now = json.loads(f.read_text(encoding="utf-8")) if f.exists() else {}
+        self._ambig = {k: v for k, v in now.items() if k != name}
+        atomic_write_text(f, json.dumps(self._ambig, indent=2, ensure_ascii=False,
+                                        sort_keys=True), mode=0o644)
         self.amb_index = min(self.amb_index, max(0, len(self._ambig) - 1))
 
     @rx.event
@@ -707,7 +708,7 @@ class LedgerState(rx.State):
         cmd = [str(sync_io.APP / ".venv/bin/python"), str(sync_io.SCRIPTS / "data" / "tmdb_fill.py")]
         if apply:
             cmd.append("--apply")
-        ok, out = sync_io.run(cmd, sync_io.APP, timeout=900)
+        ok, out = await sync_io.arun(cmd, sync_io.APP, timeout=900)
         async with self:
             self.busy = False
             self.job_log = out

@@ -4,7 +4,23 @@ A self-hosted ledger for two people: what to watch, read, cook, play and talk
 about, where to go, and what the plants need. Reflex over SQLite, one database
 file, no accounts.
 
-It ships empty. There is no sample data; everything you see is what you add.
+It ships empty: everything you see is what you add. To look around first, fill a separate demo
+ledger with made-up data (Alex and Sam in Vienna) and run it on its own port:
+
+```sh
+export LEDGER_DATA_DIR=/tmp/couples-demo
+(cd ledger_app && .venv/bin/python -m alembic upgrade head)
+ledger_app/.venv/bin/python scripts/seed/seed_demo.py
+cd ledger_app && .venv/bin/reflex run --env prod --single-port --frontend-port 3100 --backend-host 127.0.0.1
+```
+
+| Tonight | Dates |
+|---|---|
+| ![Tonight: a place, a recipe, a question and a game dealt for the evening](docs/screenshots/tonight.png) | ![Dates: the wishlist on a map, visited places in green](docs/screenshots/dates-map.png) |
+
+| Recipes | One recipe |
+|---|---|
+| ![Recipes, with votes for each of the two people](docs/screenshots/recipes.png) | ![A recipe's ingredients and steps](docs/screenshots/recipe.png) |
 
 ## Pages
 

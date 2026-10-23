@@ -40,8 +40,9 @@ docker compose up -d
 Open `https://couples.<your-tailnet>.ts.net`. The first visit asks for your two names and,
 optionally, your home location. Change either later under Settings (the gear icon). Do not
 set `PORT`: the frontend is built for port 3000 inside the container, and another value breaks
-the websocket. If you publish the container on a host port instead (`-p 8000:3000`), set
-`LEDGER_PUBLISHED_PORT=8000` so the browser's `http://localhost:8000` is an allowed origin.
+the websocket. For the same reason, reach it over https (as above) or publish it on port 3000
+only (`-p 127.0.0.1:3000:3000`): over plain http the page connects to port 3000, whatever
+port it was opened on.
 
 **Who is voting.** The two names in the header choose who this browser votes as. One tap
 switches, so a shared phone works. There is no password: your tailnet is the login, and the

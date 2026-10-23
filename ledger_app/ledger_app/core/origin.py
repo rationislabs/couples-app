@@ -24,9 +24,7 @@ def allowed_hosts() -> list[str]:
 
 
 def allowed_origins() -> list[str]:
-    # LEDGER_PUBLISHED_PORT: the host port when the container is published (-p 8000:3000)
-    extra = (os.environ.get("PORT", "3000"), os.environ.get("LEDGER_PUBLISHED_PORT", ""))
-    ports = dict.fromkeys(p for p in (*LOCAL_PORTS, *extra) if p.isdecimal())
+    ports = dict.fromkeys((*LOCAL_PORTS, os.environ.get("PORT", "3000")))
     local = [f"http://{h}:{p}" for p in ports for h in LOCAL_HOSTS]
     host = _tailnet_host()
     return ([f"https://{host}"] if host else []) + local

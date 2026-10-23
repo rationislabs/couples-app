@@ -50,13 +50,6 @@ for pasted in ("https://couples.example.ts.net/", "couples.example.ts.net:443", 
     with_env(pasted)
     assert origin.allowed_hosts()[0] == "couples.example.ts.net", origin.allowed_hosts()
 
-# Published on another host port (compose.test.yml uses 3300): the browser's origin
-# carries that port, not the container's 3000.
-os.environ["LEDGER_PUBLISHED_PORT"] = "8000"
-with_env(None)
-assert "http://localhost:8000" in origin.allowed_origins(), origin.allowed_origins()
-del os.environ["LEDGER_PUBLISHED_PORT"]
-
 with_env(None, port="3300")
 assert "http://127.0.0.1:3300" in origin.allowed_origins()
 assert "*" not in origin.allowed_origins()

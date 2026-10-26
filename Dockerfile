@@ -4,7 +4,7 @@
 # instead of rebuilding the frontend on every start.
 # uv as a stage of its own: Dependabot's docker updates read FROM lines.
 FROM ghcr.io/astral-sh/uv:0.13.5@sha256:32a7bb39b496babbd997b0a39a4d66c126bdaf5661b302bf6f06abda8deca6ff AS uv
-FROM python:3.12-slim@sha256:cb33f7f771ecec2ef1225cf39b159591a040391bd73e4c01f00fdfc4c47611d2 AS build
+FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704 AS build
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl unzip ca-certificates \
  && rm -rf /var/lib/apt/lists/*
@@ -25,7 +25,7 @@ RUN REFLEX_FRONTEND_PORT=3000 REFLEX_BACKEND_PORT=3000 \
     reflex export --frontend-only --no-zip --env prod \
  && rm -rf .web/node_modules
 
-FROM python:3.12-slim@sha256:cb33f7f771ecec2ef1225cf39b159591a040391bd73e4c01f00fdfc4c47611d2
+FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
 ARG LEDGER_VERSION=dev
 RUN apt-get update \
  && apt-get install -y --no-install-recommends tzdata \

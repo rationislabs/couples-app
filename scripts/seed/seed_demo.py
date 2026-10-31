@@ -4,27 +4,27 @@
 Two invented people (Alex and Sam, living in Vienna), a few recipes, places on the
 dates map, games and plants. Only into an empty ledger in its own data folder:
 
-    export LEDGER_DATA_DIR=/tmp/couples-demo
-    (cd ledger_app && .venv/bin/python -m alembic upgrade head)
-    ledger_app/.venv/bin/python scripts/seed/seed_demo.py
+    export HEARTH_DATA_DIR=/tmp/hearth-demo
+    (cd hearth && .venv/bin/python -m alembic upgrade head)
+    hearth/.venv/bin/python scripts/seed/seed_demo.py
 
-It refuses without LEDGER_DATA_DIR (the default is the real ledger.db) and
+It refuses without HEARTH_DATA_DIR (the default is the real hearth.db) and
 refuses a ledger that already has people, recipes or places.
 """
 import os
 import sys
 from datetime import date, timedelta
 
-if not os.environ.get("LEDGER_DATA_DIR"):
-    sys.exit("set LEDGER_DATA_DIR to a folder of its own: demo data never goes into the real ledger")
+if not os.environ.get("HEARTH_DATA_DIR"):
+    sys.exit("set HEARTH_DATA_DIR to a folder of its own: demo data never goes into the real ledger")
 
 from sqlmodel import Session, select  # noqa: E402
 
-from ledger_app.core import household  # noqa: E402
-from ledger_app.core.models import (  # noqa: E402
+from hearth.core import household  # noqa: E402
+from hearth.core.models import (  # noqa: E402
     ConvoQuestion, DateEntry, Game, Place, Plant, Recipe, RecipeIngredient, RecipeStep, User,
 )
-from ledger_app.core.state import ENGINE  # noqa: E402
+from hearth.core.state import ENGINE  # noqa: E402
 
 VIENNA = (48.2082, 16.3738)
 
@@ -116,7 +116,7 @@ def main() -> None:
                         last_watered=today - timedelta(days=ago))
                   for n, sp, room, every, ago in PLANTS)
         s.commit()
-    print(f"demo ledger ready in {os.environ['LEDGER_DATA_DIR']}")
+    print(f"demo ledger ready in {os.environ['HEARTH_DATA_DIR']}")
 
 
 if __name__ == "__main__":

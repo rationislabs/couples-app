@@ -8,14 +8,14 @@ contrast depends on luminance alone, so a luminance-matched rotation holds
 every foreground ratio to within 0.06 of the base plate at any hue.
 
 This file is the only place the tinted hexes exist. `python test_theme.py`
-prints the CSS block for ledger.css; pytest asserts the tints stay legible.
+prints the CSS block for hearth.css; pytest asserts the tints stay legible.
 """
 import colorsys
 
-# The base ramp, from ledger.css :root. Surfaces only — the meaning channel
+# The base ramp, from hearth.css :root. Surfaces only — the meaning channel
 # (--mustard, --good, --vermilion, --teal) is never rotated.
 # Ordered darkest to lightest; test_the_ramp_stays_a_ramp depends on that.
-# --ink2 and --edge are the two literals ledger.css was passing to Radix's
+# --ink2 and --edge are the two literals hearth.css was passing to Radix's
 # --gray-2 and --gray-6 by hand; they are named here so they rotate too.
 RAMP = {"--ink": "#0A1626", "--ink2": "#0D1A2C", "--plate": "#12213A",
         "--plate2": "#1E3050", "--plate3": "#27395C", "--rule": "#2C456B",

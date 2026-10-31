@@ -8,10 +8,10 @@ the database mid-transaction and miss the -wal sidecar, giving a file that
 looks fine and restores corrupt. The source is opened read-only so a backup
 can never be what corrupts it.
 
-    python -m ledger_app.core.backup backup          # nightly: database and photos
-    python -m ledger_app.core.backup prestart        # before migrating: database only
-    python -m ledger_app.core.backup verify [FILE]   # newest nightly when no FILE
-    python -m ledger_app.core.backup restore FILE    # the app must be stopped
+    python -m hearth.core.backup backup          # nightly: database and photos
+    python -m hearth.core.backup prestart        # before migrating: database only
+    python -m hearth.core.backup verify [FILE]   # newest nightly when no FILE
+    python -m hearth.core.backup restore FILE    # the app must be stopped
 """
 from __future__ import annotations
 
@@ -33,8 +33,8 @@ from . import paths
 MUST_HAVE: tuple[str, ...] = ()
 ALSO_COUNT = ("place", "title", "convoquestion", "recipe")
 
-NIGHTLY = "ledger-[0-9]*.db.gz"        # ledger-20261001-033000.db.gz, backup_db.sh's old names too
-PRESTART = "ledger-prestart-*.db.gz"
+NIGHTLY = "hearth-[0-9]*.db.gz"        # hearth-20261001-033000.db.gz, backup_db.sh's old names too
+PRESTART = "hearth-prestart-*.db.gz"
 PRESTART_KEEP = 5
 
 
@@ -138,7 +138,7 @@ def record(db: pathlib.Path, ok: bool, error: str = "", now: datetime | None = N
 
 def _keep() -> int:
     try:
-        return max(1, int(os.environ.get("LEDGER_BACKUP_KEEP") or 30))
+        return max(1, int(os.environ.get("HEARTH_BACKUP_KEEP") or 30))
     except ValueError:
         return 30
 
@@ -149,7 +149,7 @@ def nightly(now: datetime | None = None) -> tuple[bool, str]:
     now = now or datetime.now()
     db, dest = paths.db_path(), paths.backup_dir()
     try:
-        out = write(db, dest, f"ledger-{_stamp(now)}.db")
+        out = write(db, dest, f"hearth-{_stamp(now)}.db")
         prune(dest, NIGHTLY, _keep())
         live, kept = mirror_gallery(paths.gallery_dir(), dest / "gallery")
     except Exception as e:      # noqa: BLE001 — any failure is recorded, see docstring
@@ -166,7 +166,7 @@ def prestart(now: datetime | None = None) -> str:
     db, dest = paths.db_path(), paths.backup_dir()
     if not db.exists():
         return "no database yet; nothing to back up"
-    out = write(db, dest, f"ledger-prestart-{_stamp(now)}.db")
+    out = write(db, dest, f"hearth-prestart-{_stamp(now)}.db")
     prune(dest, PRESTART, PRESTART_KEEP)
     # Not recorded: the banner and due_at_start() track the nightly backup
     # (database AND photos). Recording here would clear a "failed" banner on
@@ -217,24 +217,24 @@ def due_at_start(db: pathlib.Path, now: datetime) -> bool:
 
 
 def backup_at() -> str:
-    """LEDGER_BACKUP_AT when it is a valid HH:MM, else 03:30 with a warning, so
+    """HEARTH_BACKUP_AT when it is a valid HH:MM, else 03:30 with a warning, so
     a typo cannot kill the loop."""
-    v = os.environ.get("LEDGER_BACKUP_AT", "03:30")
+    v = os.environ.get("HEARTH_BACKUP_AT", "03:30")
     try:
         h, m = v.split(":")
         if len(h) == 2 and len(m) == 2 and 0 <= int(h) <= 23 and 0 <= int(m) <= 59:
             return v
     except ValueError:
         pass
-    print(f"LEDGER_BACKUP_AT={v!r} is not HH:MM; using 03:30")
+    print(f"HEARTH_BACKUP_AT={v!r} is not HH:MM; using 03:30")
     return "03:30"
 
 
 async def nightly_loop() -> None:
-    """Lifespan task. Runs only when LEDGER_BACKUP_SCHEDULE=1, which the image
+    """Lifespan task. Runs only when HEARTH_BACKUP_SCHEDULE=1, which the image
     sets, so a host install keeps its own systemd timer instead of backing up
     twice. One backend worker (no Redis) means one loop."""
-    if os.environ.get("LEDGER_BACKUP_SCHEDULE") != "1":
+    if os.environ.get("HEARTH_BACKUP_SCHEDULE") != "1":
         return
     if due_at_start(paths.db_path(), datetime.now()):
         print((await asyncio.to_thread(nightly))[1])

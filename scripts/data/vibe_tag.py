@@ -2,10 +2,10 @@
 """Tag tracks with Last.fm tags, then work out which of your playlists each one
 sounds like.
 
-    ./ledger_app/.venv/bin/python vibe_tag.py --tags            # fetch, cached
-    ./ledger_app/.venv/bin/python vibe_tag.py --profile         # what each playlist is made of
-    ./ledger_app/.venv/bin/python vibe_tag.py --vibes --apply   # label every track
-    ./ledger_app/.venv/bin/python vibe_tag.py --suggest Whiskey # tracks that belong there
+    ./hearth/.venv/bin/python vibe_tag.py --tags            # fetch, cached
+    ./hearth/.venv/bin/python vibe_tag.py --profile         # what each playlist is made of
+    ./hearth/.venv/bin/python vibe_tag.py --vibes --apply   # label every track
+    ./hearth/.venv/bin/python vibe_tag.py --suggest Whiskey # tracks that belong there
 
 Needs `LASTFM_API_KEY` in `.env` — last.fm/api/account/create, read-only calls
 need the key alone (no signing, no user auth).
@@ -31,8 +31,8 @@ import urllib.request
 from collections import Counter
 
 from sqlmodel import Session, create_engine, select      # noqa: E402
-from ledger_app.core.models import Playlist, PlaylistTrack, Track   # noqa: E402
-from ledger_app.core.paths import db_path, json_dir  # noqa: E402
+from hearth.core.models import Playlist, PlaylistTrack, Track   # noqa: E402
+from hearth.core.paths import db_path, json_dir  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parents[2]
 ENGINE = create_engine(f"sqlite:///{db_path()}")
@@ -94,7 +94,7 @@ def call(method: str, **params) -> dict:
     for attempt in range(4):
         try:
             req = urllib.request.Request(API + "?" + q,
-                                         headers={"User-Agent": "media-ledger/1.0"})
+                                         headers={"User-Agent": "hearth/1.0"})
             with urllib.request.urlopen(req, timeout=20) as r:
                 return json.load(r)
         except urllib.error.HTTPError as e:

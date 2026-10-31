@@ -7,9 +7,9 @@ only a placeholder, so each read as "button" or "edit text".
 """
 import reflex as rx
 
-import _db  # noqa: F401  (first: never the real ledger.db)
+import _db  # noqa: F401  (first: never the real hearth.db)
 
-from ledger_app.core import inline as IN, verdicts as V        # noqa: E402
+from hearth.core import inline as IN, verdicts as V        # noqa: E402
 
 
 def controls(c, kind, out):
@@ -32,7 +32,7 @@ def text_of(c) -> str:
 
 
 def test_no_table_column_is_unnamed():
-    from ledger_app.pages import convo, dates, household
+    from hearth.pages import convo, dates, household
     Head = type(rx.table.column_header_cell(""))
     for page in (convo.page, dates.page, household.page):
         blank = [h for h in controls(page(), Head, []) if not text_of(h)]
@@ -42,7 +42,7 @@ def test_no_table_column_is_unnamed():
 def test_the_toast_region_is_there_before_its_message():
     """A live region inserted with its message already in it is often not
     announced; the region must exist empty, and the message arrive inside it."""
-    from ledger_app.core.ui import notice_toast
+    from hearth.core.ui import notice_toast
     top = notice_toast(rx.Var.create("")).render()
     assert any("aria-live" in p for p in top["props"]), \
         f"the live region is inside the condition: {top['name']} {top['props']}"

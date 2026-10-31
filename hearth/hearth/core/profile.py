@@ -14,7 +14,7 @@ from . import household as H
 
 
 class ProfileState(rx.State):
-    me: str = rx.LocalStorage("", name="couples_me", sync=True)
+    me: str = rx.LocalStorage("", name="couples_me", sync=True)   # name kept from before the rename: the browser remembers who you are under it
     names: dict[str, str] = {s: "" for s in H.SLOTS}
     initials: dict[str, str] = {s: s for s in H.SLOTS}
     backup_warning: str = ""

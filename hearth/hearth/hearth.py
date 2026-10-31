@@ -1,9 +1,9 @@
-"""Media Ledger — Reflex app."""
+"""Hearth — Reflex app."""
 import reflex as rx
 
 from .core import models  # noqa: F401  (so `reflex db makemigrations` sees the tables)
 from .pages.recipes import RecipeState
-from .core.state import LedgerState
+from .core.state import HearthState
 from .pages import dates as D
 from .pages import music as M
 from .pages import travel as T
@@ -32,7 +32,7 @@ from .core.ui import ACCENT, chip, choice_row, filter_row, navbar, themed, notic
 # which is what you were sorting by when you clicked any of the four.
 COLUMNS = [
     # (sort key, label, desktop width). The width used to be ten nth-child
-    # rules in ledger.css, renumbered by hand every time this list changed;
+    # rules in hearth.css, renumbered by hand every time this list changed;
     # forgetting silently gave one column another's width. Now each column
     # states its own, as a Reflex responsive prop: auto below 62em, where the
     # table scrolls, fixed above. Sums to 100.
@@ -56,10 +56,10 @@ def num_cell(r: rx.Var, field: str, raw_key: str, shown_key: str) -> rx.Componen
     """Read-only text, or a small number box while editing."""
     return rx.table.cell(
         rx.cond(
-            LedgerState.edit_mode,
+            HearthState.edit_mode,
             rx.input(default_value=r[raw_key], size="1", width="4.2rem",
                      placeholder="—", type="number",
-                     on_blur=LedgerState.set_number(field, r["name"]),
+                     on_blur=HearthState.set_number(field, r["name"]),
                      key=f"{r['name']}-{field}"),
             rx.text(r[shown_key], size="1",
                     style={"font_variant_numeric": "tabular-nums"}),
@@ -77,12 +77,12 @@ def progress_cell(r: rx.Var) -> rx.Component:
     def box(field: str, raw_key: str, ph: str) -> rx.Component:
         return rx.input(default_value=r[raw_key], size="1", width="3.4rem",
                         placeholder=ph, type="number",
-                        on_blur=LedgerState.set_number(field, r["name"]),
+                        on_blur=HearthState.set_number(field, r["name"]),
                         key=f"{r['name']}-{field}")
 
     return rx.table.cell(
         rx.cond(
-            LedgerState.edit_mode,
+            HearthState.edit_mode,
             rx.hstack(
                 box("seasons", "seasons_raw", "S"),
                 box("current_season", "current_raw", "on S"),
@@ -115,14 +115,14 @@ def header_cell(key: str, label: str, width: str = "auto") -> rx.Component:
         rx.hstack(
             rx.text(label, size="1", weight="medium"),
             rx.cond(
-                LedgerState.sort_key == key,
-                rx.text(rx.cond(LedgerState.sort_desc, "▼", "▲"), size="1",
+                HearthState.sort_key == key,
+                rx.text(rx.cond(HearthState.sort_desc, "▼", "▲"), size="1",
                         color_scheme=ACCENT),
                 rx.fragment(),
             ),
             spacing="1", align="center",
         ),
-        on_click=LedgerState.sort_by(key),
+        on_click=HearthState.sort_by(key),
         width=["auto", "auto", "auto", width, width],
         style={"cursor": "pointer", "white_space": "nowrap"},
     )
@@ -134,15 +134,15 @@ def row(r: rx.Var) -> rx.Component:
         # other table uses. It was a hover card here, which a phone cannot open.
         rx.table.cell(
             V.control({p: r[f"verdict_{p}"] for p in V.PEOPLE},
-                      lambda person, value: LedgerState.set_verdict(
+                      lambda person, value: HearthState.set_verdict(
                           r["id"], person, value)),
         ),
         rx.table.row_header_cell(
             rx.hstack(
                 rx.text(r["name"], size="2"),
                 rx.cond(
-                    LedgerState.edit_mode,
-                    rx.button("×", on_click=LedgerState.remove_title(r["name"]),
+                    HearthState.edit_mode,
+                    rx.button("×", on_click=HearthState.remove_title(r["name"]),
                               size="1", variant="ghost", color_scheme="red"),
                     rx.fragment(),
                 ),
@@ -159,9 +159,9 @@ def row(r: rx.Var) -> rx.Component:
         ),
         rx.table.cell(
             rx.cond(
-                LedgerState.edit_mode,
-                rx.select(LedgerState.all_list_labels, value=r["lists"], size="1",
-                          on_change=LedgerState.move_title(r["name"])),
+                HearthState.edit_mode,
+                rx.select(HearthState.all_list_labels, value=r["lists"], size="1",
+                          on_change=HearthState.move_title(r["name"])),
                 rx.text(r["lists"], size="1"),
             ),
         ),
@@ -170,10 +170,10 @@ def row(r: rx.Var) -> rx.Component:
         rx.table.cell(rx.text(r["last_played"], size="1", color_scheme="gray")),
         rx.table.cell(
             rx.cond(
-                LedgerState.edit_mode,
+                HearthState.edit_mode,
                 rx.input(default_value=r["release_raw"], size="1", width="7.5rem",
                          placeholder="YYYY-MM-DD",
-                         on_blur=LedgerState.set_release(r["name"]),
+                         on_blur=HearthState.set_release(r["name"]),
                          key=f"{r['name']}-release"),
                 # only a future date earns space: the Year column already says
                 # when everything else came out
@@ -187,10 +187,10 @@ def row(r: rx.Var) -> rx.Component:
         ),
         rx.table.cell(
             rx.cond(
-                LedgerState.edit_mode,
+                HearthState.edit_mode,
                 rx.input(default_value=r["description_raw"], size="1", max_length=300,
                          placeholder="description (max 300)",
-                         on_blur=LedgerState.set_description(r["name"]),
+                         on_blur=HearthState.set_description(r["name"]),
                          key=f"{r['name']}-desc"),
                 rx.text(r["description"], size="1", color_scheme="gray",
                         class_name="lib-desc"),
@@ -198,9 +198,9 @@ def row(r: rx.Var) -> rx.Component:
             style={"min_width": "22rem", "max_width": "34rem",
                    "white_space": "normal", "vertical_align": "top"},
         ),
-        IN.rating_cell(r["rating"], LedgerState.set_inline(r["id"], "rating"),
+        IN.rating_cell(r["rating"], HearthState.set_inline(r["id"], "rating"),
                        key=f"{r['id']}-rating"),
-        IN.notes_cell(r["notes"], LedgerState.set_inline(r["id"], "notes"),
+        IN.notes_cell(r["notes"], HearthState.set_inline(r["id"], "notes"),
                       key=f"{r['id']}-notes"),
     )
 
@@ -212,7 +212,7 @@ def candidate(o: rx.Var, i: rx.Var) -> rx.Component:
             rx.text(o["meta"], size="1", color_scheme="gray"),
             rx.text(o["overview"], size="1",
                     style={"white_space": "normal", "line_height": "1.5"}),
-            rx.button("Use this", on_click=LedgerState.amb_pick(i), size="1",
+            rx.button("Use this", on_click=HearthState.amb_pick(i), size="1",
                       color_scheme=ACCENT),
             spacing="2", align="start", width="100%",
         ),
@@ -223,22 +223,22 @@ def candidate(o: rx.Var, i: rx.Var) -> rx.Component:
 def ambiguity_queue() -> rx.Component:
     """Titles TMDB matched more than one way. One at a time, you decide."""
     return rx.cond(
-        LedgerState.amb_count > 0,
+        HearthState.amb_count > 0,
         rx.box(
             rx.vstack(
                 rx.hstack(
                     rx.heading("TMDB needs your pick", size="4", as_="h2"),
-                    rx.badge(LedgerState.amb_position, color_scheme=ACCENT),
+                    rx.badge(HearthState.amb_position, color_scheme=ACCENT),
                     rx.spacer(),
-                    rx.button("Skip", on_click=LedgerState.amb_skip, size="1",
+                    rx.button("Skip", on_click=HearthState.amb_skip, size="1",
                               variant="soft"),
-                    rx.button("Leave blank", on_click=LedgerState.amb_leave_blank,
+                    rx.button("Leave blank", on_click=HearthState.amb_leave_blank,
                               size="1", variant="outline"),
                     width="100%", align="center", spacing="2",
                 ),
-                rx.text(LedgerState.amb_name, weight="bold", size="3"),
-                rx.text(LedgerState.amb_why, size="1", color_scheme="gray"),
-                rx.grid(rx.foreach(LedgerState.amb_options, candidate),
+                rx.text(HearthState.amb_name, weight="bold", size="3"),
+                rx.text(HearthState.amb_why, size="1", color_scheme="gray"),
+                rx.grid(rx.foreach(HearthState.amb_options, candidate),
                         columns="3", spacing="3", width="100%"),
                 spacing="2", width="100%", align="start",
             ),
@@ -267,7 +267,7 @@ def _progress_chip(r: rx.Var) -> rx.Component:
             ),
             spacing="0", align="start",
         ),
-        rx.button("+1", on_click=LedgerState.bump_episode(r["name"]), size="1",
+        rx.button("+1", on_click=HearthState.bump_episode(r["name"]), size="1",
                   variant="surface", title="watched another episode",
                   style={"margin": "0"}),
         spacing="2", align="center",
@@ -278,18 +278,18 @@ def _progress_chip(r: rx.Var) -> rx.Component:
 
 def continue_watching() -> rx.Component:
     return rx.cond(
-        LedgerState.in_progress,
+        HearthState.in_progress,
         rx.vstack(
             rx.hstack(
                 rx.text("Carry on with", size="2",
                         style={"fontFamily": "'Archivo Narrow', sans-serif",
                                "fontWeight": "700", "color": "var(--steel)"}),
-                rx.text(LedgerState.in_progress_label, size="1", class_name="tnum",
+                rx.text(HearthState.in_progress_label, size="1", class_name="tnum",
                         style={"color": "var(--dim)"}),
                 spacing="2", align="center",
             ),
             rx.box(
-                rx.hstack(rx.foreach(LedgerState.in_progress, _progress_chip),
+                rx.hstack(rx.foreach(HearthState.in_progress, _progress_chip),
                           spacing="2", align="stretch"),
                 width="100%",
                 style={"overflowX": "auto", "paddingBottom": "0.35rem"},
@@ -303,52 +303,52 @@ def continue_watching() -> rx.Component:
 def filters() -> rx.Component:
     return rx.vstack(
         rx.hstack(
-            rx.input(placeholder="Search titles", value=LedgerState.search,
-                     on_change=LedgerState.set_search, width="18rem"),
-            rx.button("Clear", on_click=LedgerState.clear_filters, size="1",
+            rx.input(placeholder="Search titles", value=HearthState.search,
+                     on_change=HearthState.set_search, width="18rem"),
+            rx.button("Clear", on_click=HearthState.clear_filters, size="1",
                       variant="ghost", style={"color": "var(--steel)"}),
-            chip(LedgerState.unreleased_label, LedgerState.only_unreleased,
-                 LedgerState.toggle_unreleased, hue="#F2A93B"),
+            chip(HearthState.unreleased_label, HearthState.only_unreleased,
+                 HearthState.toggle_unreleased, hue="#F2A93B"),
             rx.spacer(),
-            rx.text(LedgerState.page_label, size="1", class_name="tnum",
+            rx.text(HearthState.page_label, size="1", class_name="tnum",
                     style={"color": "var(--dim)"}),
-            rx.button("Prev", on_click=LedgerState.prev_page, size="1", variant="surface",
-                      disabled=LedgerState.page == 0),
-            rx.button("Next", on_click=LedgerState.next_page, size="1", variant="surface",
-                      disabled=LedgerState.page >= LedgerState.last_page),
+            rx.button("Prev", on_click=HearthState.prev_page, size="1", variant="surface",
+                      disabled=HearthState.page == 0),
+            rx.button("Next", on_click=HearthState.next_page, size="1", variant="surface",
+                      disabled=HearthState.page >= HearthState.last_page),
             width="100%", align="center", spacing="3",
         ),
         rx.box(
             filter_row("medium", rx.foreach(
-                LedgerState.medium_chips,
-                lambda m: chip(m["label"], LedgerState.sel_media.contains(m["key"]),
-                               LedgerState.toggle_medium(m["key"]), hue=m["hue"]))),
+                HearthState.medium_chips,
+                lambda m: chip(m["label"], HearthState.sel_media.contains(m["key"]),
+                               HearthState.toggle_medium(m["key"]), hue=m["hue"]))),
             filter_row("genre", rx.foreach(
-                LedgerState.genre_shown,
-                lambda g: chip(g, LedgerState.sel_genres.contains(g),
-                               LedgerState.toggle_genre(g), dashed=True)),
+                HearthState.genre_shown,
+                lambda g: chip(g, HearthState.sel_genres.contains(g),
+                               HearthState.toggle_genre(g), dashed=True)),
                 tail=rx.cond(
-                    LedgerState.genre_more != "",
-                    rx.button(LedgerState.genre_more,
-                              on_click=LedgerState.toggle_genres_expanded, size="1",
+                    HearthState.genre_more != "",
+                    rx.button(HearthState.genre_more,
+                              on_click=HearthState.toggle_genres_expanded, size="1",
                               variant="ghost",
                               style={"color": "var(--steel)", "whiteSpace": "nowrap"}),
-                    rx.button("fewer", on_click=LedgerState.toggle_genres_expanded,
+                    rx.button("fewer", on_click=HearthState.toggle_genres_expanded,
                               size="1", variant="ghost",
                               style={"color": "var(--steel)"}),
                 )),
             filter_row("decade", rx.foreach(
-                LedgerState.decade_names,
-                lambda d: chip(d, LedgerState.sel_decades.contains(d),
-                               LedgerState.toggle_decade(d)))),
+                HearthState.decade_names,
+                lambda d: chip(d, HearthState.sel_decades.contains(d),
+                               HearthState.toggle_decade(d)))),
             filter_row("list", rx.foreach(
-                LedgerState.list_names,
-                lambda l: chip(l, LedgerState.sel_lists.contains(l),
-                               LedgerState.toggle_list(l)))),
-            choice_row("watched", LedgerState.tried_filter, LedgerState.set_tried,
+                HearthState.list_names,
+                lambda l: chip(l, HearthState.sel_lists.contains(l),
+                               HearthState.toggle_list(l)))),
+            choice_row("watched", HearthState.tried_filter, HearthState.set_tried,
                        [("watched", "Watched"), ("watching", "Watching"),
                         ("unwatched", "Not started")]),
-            V.unvoted_row(LedgerState),
+            V.unvoted_row(HearthState),
             class_name="filter-stack",
         ),
         width="100%", spacing="3",
@@ -371,13 +371,13 @@ def card(c: rx.Var) -> rx.Component:
             rx.cond(
                 c["paged"] != "",
                 rx.hstack(
-                    rx.button("‹", on_click=LedgerState.card_prev(c["key"]), size="1",
+                    rx.button("‹", on_click=HearthState.card_prev(c["key"]), size="1",
                               variant="outline", disabled=c["first"] != ""),
                     rx.spacer(),
                     rx.text(c["label"], size="1", color_scheme="gray",
                             style={"font_variant_numeric": "tabular-nums"}),
                     rx.spacer(),
-                    rx.button("›", on_click=LedgerState.card_next(c["key"]), size="1",
+                    rx.button("›", on_click=HearthState.card_next(c["key"]), size="1",
                               variant="outline", disabled=c["last"] != ""),
                     width="100%", align="center",
                 ),
@@ -390,12 +390,12 @@ def card(c: rx.Var) -> rx.Component:
 
 
 def deck_section(name: str, cards: rx.Var, note: str) -> rx.Component:
-    open_ = LedgerState.open_sections.contains(name)
+    open_ = HearthState.open_sections.contains(name)
     return rx.vstack(
         rx.hstack(
             rx.text(rx.cond(open_, "▾", "▸"), color_scheme=ACCENT, size="3"),
             rx.heading(name, size="4", as_="h2"),
-            on_click=LedgerState.toggle_section(name),
+            on_click=HearthState.toggle_section(name),
             style={"cursor": "pointer", "user_select": "none"},
             align="center", spacing="2",
         ),
@@ -418,36 +418,36 @@ def index() -> rx.Component:
             navbar("/library"),
             continue_watching(),
             rx.hstack(
-                rx.heading("Media Library Ledger", size="7"),
+                rx.heading("Media Library", size="7"),
                 rx.spacer(),
-                rx.text(LedgerState.library_summary, size="1", class_name="tnum",
+                rx.text(HearthState.library_summary, size="1", class_name="tnum",
                         style={"color": "var(--dim)"}),
                 width="100%", align="end",
             ),
             rx.hstack(
-                rx.button(rx.cond(LedgerState.edit_mode, "Done", "Edit"),
-                          on_click=LedgerState.toggle_edit, size="1",
-                          variant=rx.cond(LedgerState.edit_mode, "solid", "surface")),
+                rx.button(rx.cond(HearthState.edit_mode, "Done", "Edit"),
+                          on_click=HearthState.toggle_edit, size="1",
+                          variant=rx.cond(HearthState.edit_mode, "solid", "surface")),
                 rx.text("|", style={"color": "var(--rule)"}),
-                rx.button("Preview TMDB", on_click=LedgerState.preview_tmdb,
-                          size="1", variant="surface", loading=LedgerState.busy),
-                rx.button("Sync from TMDB", on_click=LedgerState.sync_from_tmdb,
-                          size="1", variant="surface", loading=LedgerState.busy),
+                rx.button("Preview TMDB", on_click=HearthState.preview_tmdb,
+                          size="1", variant="surface", loading=HearthState.busy),
+                rx.button("Sync from TMDB", on_click=HearthState.sync_from_tmdb,
+                          size="1", variant="surface", loading=HearthState.busy),
                 width="100%", align="center", spacing="2", wrap="wrap",
             ),
-            notice_toast(LedgerState.notice),
+            notice_toast(HearthState.notice),
             ambiguity_queue(),
             rx.divider(),
             filters(),
             rx.cond(
-                LedgerState.edit_mode,
+                HearthState.edit_mode,
                 rx.hstack(
-                    rx.input(placeholder="New title…", value=LedgerState.new_title,
-                             on_change=LedgerState.set_new_title, width="16rem"),
-                    rx.select(LedgerState.all_list_labels, value=LedgerState.new_list,
+                    rx.input(placeholder="New title…", value=HearthState.new_title,
+                             on_change=HearthState.set_new_title, width="16rem"),
+                    rx.select(HearthState.all_list_labels, value=HearthState.new_list,
                               placeholder="destination list",
-                              on_change=LedgerState.set_new_list, size="1"),
-                    rx.button("Add", on_click=LedgerState.add_title, size="1",
+                              on_change=HearthState.set_new_list, size="1"),
+                    rx.button("Add", on_click=HearthState.add_title, size="1",
                               color_scheme=ACCENT),
                     spacing="2", align="center",
                     style={"padding": "0.6rem", "border": "1px dashed var(--accent-8)",
@@ -458,18 +458,18 @@ def index() -> rx.Component:
             rx.box(
                 rx.table.root(
                     rx.table.header(rx.table.row(*[header_cell(k, l, w) for k, l, w in COLUMNS])),
-                    rx.table.body(rx.foreach(LedgerState.page_rows, row)),
+                    rx.table.body(rx.foreach(HearthState.page_rows, row)),
                     variant="surface", size="1",
                 ),
                 width="100%", overflow_x="auto", class_name="lib-table",
             ),
-            pager(LedgerState),
+            pager(HearthState),
             rx.divider(),
-            deck_section("Anime", LedgerState.deck_anime,
+            deck_section("Anime", HearthState.deck_anime,
                          "Anime series."),
-            deck_section("Movies", LedgerState.deck_movies,
+            deck_section("Movies", HearthState.deck_movies,
                          "Films. Anime films also appear under the Anime filter above."),
-            deck_section("TV Shows", LedgerState.deck_tv,
+            deck_section("TV Shows", HearthState.deck_tv,
                          "Live-action and Western animation series."),
             rx.text("Descriptions, genres and years from TMDB. This product uses the "
                     "TMDB API but is not endorsed or certified by TMDB.",
@@ -480,7 +480,7 @@ def index() -> rx.Component:
     )
 
 
-app = rx.App(stylesheets=["/ledger.css"],
+app = rx.App(stylesheets=["/hearth.css"],
              # head_components, not `scripts`: rx.App has no scripts argument in
              # 0.9. defer keeps it from blocking the first paint.
              head_components=[rx.el.script(src="/keys.js", defer=True)],
@@ -498,8 +498,8 @@ def themed_page(component, route, **kw):
                  on_load=[ProfileState.gate(route), *loads], **kw)
 
 
-themed_page(index, route="/library", title="Media Library Ledger",
-            on_load=[LedgerState.load, LedgerState.load_ambiguous])
+themed_page(index, route="/library", title="Media Library",
+            on_load=[HearthState.load, HearthState.load_ambiguous])
 themed_page(R.index, route="/recipes", title="Recipes", on_load=RecipeState.load)
 themed_page(R.detail, route="/recipes/[slug]", title="Recipe",
             on_load=[RecipeState.load, RecipeState.load_detail])

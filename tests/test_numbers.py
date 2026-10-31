@@ -1,7 +1,7 @@
 """Checks for number fields: a character that looks like a digit is refused
 with a notice, never a crash.
 
-    ledger_app/.venv/bin/python tests/test_numbers.py
+    hearth/.venv/bin/python tests/test_numbers.py
 
 str.isdigit() is True for "²" and "①", which int() then rejects with
 ValueError inside the event handler. isdecimal() is what int() accepts.
@@ -9,18 +9,18 @@ ValueError inside the event handler. isdecimal() is what int() accepts.
 import pathlib
 import re
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 
 _db.migrate()
 
 from sqlmodel import Session  # noqa: E402
 
-from ledger_app.core import inline as IN  # noqa: E402
-from ledger_app.core.models import Game  # noqa: E402
-from ledger_app.core.state import ENGINE  # noqa: E402
-from ledger_app.pages.home import HomeState  # noqa: E402
+from hearth.core import inline as IN  # noqa: E402
+from hearth.core.models import Game  # noqa: E402
+from hearth.core.state import ENGINE  # noqa: E402
+from hearth.pages.home import HomeState  # noqa: E402
 
-APP = pathlib.Path(__file__).resolve().parents[1] / "ledger_app" / "ledger_app"
+APP = pathlib.Path(__file__).resolve().parents[1] / "hearth" / "hearth"
 
 
 def test_superscript_rating_is_a_notice():

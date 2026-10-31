@@ -1,14 +1,14 @@
 """Checks for pages/dates.py build_map(): place names are text, never markup.
 
-    ledger_app/.venv/bin/python tests/test_map.py
+    hearth/.venv/bin/python tests/test_map.py
 
 Names, tags and cities come from Google Takeout and OpenStreetMap. Pasted into
 the popup HTML or the inline <script> as-is, a name containing markup runs as
 script inside the map.
 """
-import _db  # noqa: F401  (first: never the real ledger.db)
+import _db  # noqa: F401  (first: never the real hearth.db)
 
-from ledger_app.pages.dates import build_map  # noqa: E402
+from hearth.pages.dates import build_map  # noqa: E402
 
 EVIL = "</script><img src=x onerror=alert(1)>"
 

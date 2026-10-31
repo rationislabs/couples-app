@@ -1,6 +1,6 @@
 """Checks for first run, Settings and the home location.
 
-    ledger_app/.venv/bin/python tests/test_setup_flow.py
+    hearth/.venv/bin/python tests/test_setup_flow.py
 """
 import pathlib
 import sys
@@ -9,7 +9,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import _db  # noqa: E402
 _db.migrate()
 
-from ledger_app.core import household as H                      # noqa: E402
+from hearth.core import household as H                      # noqa: E402
 
 
 def test_redirect_rule():
@@ -54,7 +54,7 @@ def test_home_round_trip_and_clearing():
 def test_no_home_does_not_empty_tonight():
     """Tonight defaults to near_only with a 60 km radius. Without a home every
     distance is unknown, and the filter must switch off rather than drop all."""
-    from ledger_app.pages.home import too_far
+    from hearth.pages.home import too_far
     assert too_far(None, None, True, 60, "out to eat") is False
     assert too_far((48.2, 16.37), None, True, 60, "out to eat") is True
     assert too_far((48.2, 16.37), 80.0, True, 60, "out to eat") is True

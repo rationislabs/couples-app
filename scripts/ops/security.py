@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Secret storage for the media ledger.
+"""Secret storage for Hearth.
 
-    ./ledger_app/.venv/bin/python security.py --check      # posture report
-    ./ledger_app/.venv/bin/python security.py --encrypt    # .env -> secrets.enc
-    ./ledger_app/.venv/bin/python security.py --rekey      # new passphrase
+    ./hearth/.venv/bin/python security.py --check      # posture report
+    ./hearth/.venv/bin/python security.py --encrypt    # .env -> secrets.enc
+    ./hearth/.venv/bin/python security.py --rekey      # new passphrase
 
 What this protects against, and what it does not
 ------------------------------------------------
@@ -20,7 +20,7 @@ against someone who already has your logged-in user account, because the app has
 to decrypt to run and so does anything running as you.
 
 The larger exposure is usually not these tokens — it is an unencrypted disk,
-where `ledger.db` (every saved place, the date log and the private pages) is
+where `hearth.db` (every saved place, the date log and the private pages) is
 readable by anyone who takes the machine. Full-disk encryption fixes that;
 this file cannot.
 
@@ -49,9 +49,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 ENV_FILE = ROOT / ".env"
 ENC_FILE = ROOT / "secrets.enc"
 
-KEYRING_SERVICE = "media-ledger"
+KEYRING_SERVICE = "media-ledger"   # kept from before the rename: a new name would orphan stored secrets
 KEYRING_USER = "secrets-passphrase"
-PASSPHRASE_ENV = "LEDGER_PASSPHRASE"
+PASSPHRASE_ENV = "HEARTH_PASSPHRASE"
 
 # scrypt parameters. n=2**15 costs ~100 ms per derivation here, which is
 # irrelevant once per process start and expensive in bulk for anyone guessing.
@@ -104,7 +104,7 @@ def _passphrase(*, prompt_ok: bool = True, confirm: bool = False) -> str:
             f"keyring by running `security.py --encrypt` from a terminal"
         )
 
-    value = getpass.getpass("Passphrase for the ledger secrets: ")
+    value = getpass.getpass("Passphrase for the Hearth secrets: ")
     if confirm and value != getpass.getpass("Again: "):
         raise SystemExit("passphrases did not match")
     if not value:
@@ -267,7 +267,7 @@ def cmd_encrypt() -> int:
     stored = _remember(passphrase)
     print(f"wrote {ENC_FILE.name} (0600), verified it decrypts")
     print("passphrase saved to the OS keyring" if stored else
-          "could not reach the OS keyring — set LEDGER_PASSPHRASE to run headless")
+          "could not reach the OS keyring — set HEARTH_PASSPHRASE to run headless")
     print(f"\n{ENV_FILE.name} stays: the app reads it, not {ENC_FILE.name}.")
     return 0
 
@@ -333,7 +333,7 @@ def cmd_check() -> int:
         except Exception as exc:                             # noqa: BLE001
             line("warn", f"keyring unreachable: {type(exc).__name__}")
     else:
-        line("warn", "no keyring module and no LEDGER_PASSPHRASE")
+        line("warn", "no keyring module and no HEARTH_PASSPHRASE")
 
     print("disk")
     import subprocess
@@ -342,7 +342,7 @@ def cmd_check() -> int:
     if "crypto_luks" in blk:
         line("ok", "an encrypted volume exists")
     else:
-        line("FAIL", "no encrypted volume: ledger.db and every backup are "
+        line("FAIL", "no encrypted volume: hearth.db and every backup are "
                      "readable by anyone who takes this machine")
         problems += 1
 

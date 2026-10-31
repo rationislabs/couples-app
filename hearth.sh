@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# Run the Reflex media ledger.
-# Usage: ./ledger.sh {start|dev|stop|restart|restart-dev|watch|status|check|open|logs}
+# Run Hearth, the Reflex app.
+# Usage: ./hearth.sh {start|dev|stop|restart|restart-dev|watch|status|check|open|logs}
 #   start = prod build, dev = hot reload. Both bind loopback only.
 set -euo pipefail
-umask 077   # ledger.db, backups and photos are private: owner-only
+umask 077   # hearth.db, backups and photos are private: owner-only
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DIR="$ROOT/ledger_app"
+DIR="$ROOT/hearth"
 
 # Machine-specific settings live in .env, but the app reads them from the
 # environment (rxconfig.py vite_allowed_hosts, state.py HOME_AT). Nothing else
 # bridges the two, so setup.sh writing them to .env had no effect without this
 # and the app fell back to a default Vite answers 403 to.
-# Only LEDGER_* is exported: the API keys stay out of the app's
+# Only HEARTH_* is exported: the API keys stay out of the app's
 # environment, which never reads them.
 if [ -f "$ROOT/.env" ]; then
-  set -a; . <(grep -E '^LEDGER_[A-Z_]+=' "$ROOT/.env"); set +a
+  set -a; . <(grep -E '^HEARTH_[A-Z_]+=' "$ROOT/.env"); set +a
 fi
 PORT="${PORT:-3100}"
 URL="http://localhost:$PORT/"
@@ -22,7 +22,7 @@ LOG="$DIR/reflex.log"
 
 port_pid(){ ss -ltnp 2>/dev/null | grep -F ":$PORT " | grep -o "pid=[0-9]*" | head -1 | cut -d= -f2 || true; }
 held(){ ss -ltn 2>/dev/null | awk -v p=":$PORT" '$4 ~ p"$"' | grep -q .; }
-# Only a process of this checkout is the app: it runs from ledger_app/ or from
+# Only a process of this checkout is the app: it runs from hearth/ or from
 # its .venv. Anything else on the port (another copy, another program) is left
 # alone; ss shows no pid at all for another user's process.
 ours(){ [ "$(readlink "/proc/$1/cwd" 2>/dev/null)" = "$DIR" ] \
@@ -85,7 +85,7 @@ case "${1:-status}" in
       if serving; then
         echo "started"; echo "$URL"
         ss -ltn 2>/dev/null | awk -v p=":$PORT" '$4 ~ p"$" {print $4}' | grep -qE '^(0\.0\.0\.0|\*|\[::\]):' \
-          && echo "WARNING: still bound to all interfaces — run ./ledger.sh check" \
+          && echo "WARNING: still bound to all interfaces — run ./hearth.sh check" \
           || echo "bound to loopback only"
         exit 0
       fi
@@ -125,7 +125,7 @@ case "${1:-status}" in
     echo "watching $DIR (poll ${poll}s, settle ${settle}s) — ctrl-c to stop"
     while true; do
       sleep "$poll"
-      if find "$DIR/ledger_app" "$DIR/assets" -type f \
+      if find "$DIR/hearth" "$DIR/assets" -type f \
               \( -name '*.py' -o -name '*.css' -o -name '*.js' \) \
               -newer "$stamp" -print -quit 2>/dev/null | grep -q .; then
         touch "$stamp"
@@ -149,7 +149,7 @@ case "${1:-status}" in
         continue
       fi
       echo "restarting prod…"
-      if "$0" restart; then touch "$stamp"; else echo "restart failed — ./ledger.sh logs"; fi
+      if "$0" restart; then touch "$stamp"; else echo "restart failed — ./hearth.sh logs"; fi
       pending=0
     done ;;
   restart) "$0" stop; sleep 2; "$0" start ;;
@@ -157,7 +157,7 @@ case "${1:-status}" in
   status)
     p="$(app_pid)"
     if [ -n "$p" ] && serving; then echo "running (pid $p)"; echo "$URL"
-    elif [ -n "$p" ]; then echo "pid $p on $PORT but not serving — ./ledger.sh restart"
+    elif [ -n "$p" ]; then echo "pid $p on $PORT but not serving — ./hearth.sh restart"
     elif held; then other "this app is not running"
     else echo "not running"; fi ;;
   open) "$0" start >/dev/null || exit 1; xdg-open "$URL" >/dev/null 2>&1 & echo "$URL" ;;

@@ -9,12 +9,12 @@ import sys
 
 from sqlmodel import Session, select                       # noqa: E402
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.core.models import Plant                        # noqa: E402
-from ledger_app.pages.plants import PlantState                   # noqa: E402
-from ledger_app.core.state import ENGINE                        # noqa: E402
+from hearth.core.models import Plant                        # noqa: E402
+from hearth.pages.plants import PlantState                   # noqa: E402
+from hearth.core.state import ENGINE                        # noqa: E402
 
 TODAY = dt.date.today()
 MADE: list[int] = []
@@ -134,7 +134,7 @@ def test_water_all_due_only_touches_what_is_due():
 def test_health_reads_from_the_facts_already_known():
     """add health status to plant tracker". Derived, so it
     cannot drift out of date the way a stored column would."""
-    from ledger_app.pages.plants import _health
+    from hearth.pages.plants import _health
     assert _health({"wishlist": True, "due_days": -99, "fit": "x"}) == ""
     assert _health({"wishlist": False, "due_days": -30, "fit": ""}) == "parched"
     assert _health({"wishlist": False, "due_days": -2, "fit": ""}) == "thirsty"
@@ -148,7 +148,7 @@ def test_health_reads_from_the_facts_already_known():
 def test_a_human_override_beats_every_derived_signal():
     """Nothing derivable knows what the leaves look like, so the override wins
     outright rather than being blended in."""
-    from ledger_app.pages.plants import _health
+    from hearth.pages.plants import _health
     r = {"wishlist": False, "due_days": -30, "fit": "too dark",
          "health_override": "sick"}
     assert _health(r) == "sick"

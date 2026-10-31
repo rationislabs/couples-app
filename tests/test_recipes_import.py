@@ -1,7 +1,7 @@
 """Checks for pages/recipes.py scrape(): only web pages, and never more of
 one than fits in memory.
 
-    ledger_app/.venv/bin/python tests/test_recipes_import.py
+    hearth/.venv/bin/python tests/test_recipes_import.py
 
 urlopen also opens file:// and ftp:// URLs, and r.read() with no size reads
 until the server stops: file:///dev/zero never stops.
@@ -9,9 +9,9 @@ until the server stops: file:///dev/zero never stops.
 import io
 import urllib.request
 
-import _db  # noqa: F401  (first: never the real ledger.db)
+import _db  # noqa: F401  (first: never the real hearth.db)
 
-from ledger_app.pages import recipes as R  # noqa: E402
+from hearth.pages import recipes as R  # noqa: E402
 
 
 def refuses(url):

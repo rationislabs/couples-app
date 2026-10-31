@@ -1145,7 +1145,7 @@ def _map_block() -> rx.Component:
 
 
 def _filter_drawer() -> rx.Component:
-    """Phone only — hidden on desktop by the breakpoint in ledger.css, where the
+    """Phone only — hidden on desktop by the breakpoint in hearth.css, where the
     same rows stay inline. The chips are rendered twice, which costs about sixty
     buttons of markup and buys back most of a phone screen.
     """

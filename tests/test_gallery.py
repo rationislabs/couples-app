@@ -1,6 +1,6 @@
 """Checks for pages/gallery.py — uploads, the 100-photo cap, and delete.
 
-    ledger_app/.venv/bin/python tests/test_gallery.py
+    hearth/.venv/bin/python tests/test_gallery.py
 
 Runs against a throwaway directory, never the real gallery/: the upload dir is
 repointed before anything imports reflex's upload module.
@@ -19,10 +19,10 @@ os.environ["REFLEX_UPLOADED_FILES_DIR"] = str(TMP)
 import reflex as rx                                   # noqa: E402
 from PIL import Image                                  # noqa: E402
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.pages import gallery as G             # noqa: E402
+from hearth.pages import gallery as G             # noqa: E402
 
 assert rx.get_upload_dir() == TMP, "not the throwaway dir — refusing to run"
 

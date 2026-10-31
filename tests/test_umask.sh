@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Files the app creates (ledger.db, backups, photos, the token file) are the
+# Files the app creates (hearth.db, backups, photos, the token file) are the
 # household's private data: owner-only, not the default 0644, on a shared host
 # and in the container alike.
 #
@@ -13,8 +13,8 @@ check "the container entrypoint sets umask 077" \
   "[ \"\$(sh '$ROOT/docker/entrypoint.sh' sh -c umask)\" = 0077 ]"
 check "backup_db.sh sets umask 077 (the host's nightly timer)" \
   "grep -q '^umask 077' '$ROOT/backup_db.sh'"
-check "ledger.sh sets umask 077 before starting anything" \
-  "sed -n '1,/^PORT=/p' '$ROOT/ledger.sh' | grep -q '^umask 077'"
+check "hearth.sh sets umask 077 before starting anything" \
+  "sed -n '1,/^PORT=/p' '$ROOT/hearth.sh' | grep -q '^umask 077'"
 
 [ $fail -eq 0 ] && echo "umask checks passed" || echo "umask checks FAILED"
 exit $fail

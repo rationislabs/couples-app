@@ -3,10 +3,10 @@ other week (it called shift_week(0), which moved nowhere).
 
     ./.venv/bin/python test_meal_plan.py
 """
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.pages.recipes import RecipeState              # noqa: E402
+from hearth.pages.recipes import RecipeState              # noqa: E402
 
 
 def test_this_week_returns_from_any_week():

@@ -13,7 +13,7 @@ import sys
 import tempfile
 import urllib.error
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 
 _db.migrate()
 
@@ -22,7 +22,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "scripts" /
 import spotify_sync as S                                     # noqa: E402
 from sqlmodel import Session, select                         # noqa: E402
 
-from ledger_app.core.models import Playlist, PlaylistTrack, Track  # noqa: E402
+from hearth.core.models import Playlist, PlaylistTrack, Track  # noqa: E402
 
 
 def test_a_playlist_gone_from_spotify_is_removed_with_its_tracks():
@@ -58,7 +58,7 @@ def test_a_long_rate_limit_stops_instead_of_sleeping():
 
 
 def test_a_rotated_token_survives_without_a_dotenv():
-    """The container has no .env: the rotated token goes under LEDGER_DATA_DIR
+    """The container has no .env: the rotated token goes under HEARTH_DATA_DIR
     and wins over the (now stale) SPOTIFY_REFRESH_TOKEN the container passed."""
     real_env = S.ENV
     S.ENV = pathlib.Path(tempfile.mkdtemp()) / ".env"          # absent

@@ -10,7 +10,7 @@ wardrobe exists is one query:
 
     delete from garment where placeholder = 1
 
-    ./ledger_app/.venv/bin/python scripts/seed/seed_wardrobe.py
+    ./hearth/.venv/bin/python scripts/seed/seed_wardrobe.py
 """
 import pathlib
 import sys
@@ -18,8 +18,8 @@ import sys
 
 from sqlmodel import Session, select                       # noqa: E402
 
-from ledger_app.core.models import Garment                      # noqa: E402
-from ledger_app.core.state import ENGINE                        # noqa: E402
+from hearth.core.models import Garment                      # noqa: E402
+from hearth.core.state import ENGINE                        # noqa: E402
 
 # (name, slot, season, formality, colour)
 ITEMS = [

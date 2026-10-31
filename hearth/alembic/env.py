@@ -13,7 +13,7 @@ config = context.config
 # a plain `alembic upgrade head` (the container, the tests) gets the same
 # database the app opens.
 if config.get_main_option("sqlalchemy.url", "").startswith("driver://"):
-    from ledger_app.core.paths import db_path
+    from hearth.core.paths import db_path
     config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path()}")
 
 # Interpret the config file for Python logging.

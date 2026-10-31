@@ -1,4 +1,4 @@
-"""Media ledger schema.
+"""Hearth schema.
 
 One shared title catalogue; lists, progress and watch state hang off it. A single
 user today, but the shape extends to several without a migration.

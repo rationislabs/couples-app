@@ -1,4 +1,4 @@
-"""Ledger state: loads every title once, then filters/sorts/pages in Python.
+"""Hearth state: loads every title once, then filters/sorts/pages in Python.
 
 A few hundred rows is small enough to hold server-side and slice per request, so the wire
 only ever carries the 20 rows actually on screen. `_rows` is a backend-only var
@@ -154,7 +154,7 @@ def _progress_label(r: dict) -> str:
         out = ""
     return "  ".join(x for x in (here, out) if x) or "—"
 
-class LedgerState(rx.State):
+class HearthState(rx.State):
     """Everything the library view needs."""
 
     _rows: list[dict] = []          # backend-only: full catalogue, native types

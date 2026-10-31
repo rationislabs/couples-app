@@ -10,8 +10,8 @@ hex copy of a value they replaced may survive to escape this check.
 import pathlib
 import re
 
-ROOT = pathlib.Path(__file__).resolve().parents[1] / "ledger_app"
-CSS = (ROOT / "assets" / "ledger.css").read_text()
+ROOT = pathlib.Path(__file__).resolve().parents[1] / "hearth"
+CSS = (ROOT / "assets" / "hearth.css").read_text()
 SURFACES = ("--ink", "--plate", "--plate2")
 TEXT = ("--dim", "--vermilion", "--rose")
 
@@ -44,7 +44,7 @@ RETIRED = ("#C43A6E", "#E2503F", "#7C8CA8")
 
 
 def test_no_copy_of_a_retired_value_survives():
-    hits = [f"{p.name}:{n}" for p in sorted((ROOT / "ledger_app").rglob("*.py"))
+    hits = [f"{p.name}:{n}" for p in sorted((ROOT / "hearth").rglob("*.py"))
             for n, line in enumerate(p.read_text().splitlines(), 1)
             if any(h in line.upper() for h in RETIRED)]
     assert not hits, hits

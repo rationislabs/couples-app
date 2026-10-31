@@ -1,7 +1,7 @@
 """Checks for scripts/ops/security.py — it must never leave the app without
 its keys.
 
-    ledger_app/.venv/bin/python tests/test_security.py
+    hearth/.venv/bin/python tests/test_security.py
 
 Nothing in the app or the scripts reads secrets.enc: they all read .env. A
 command that deletes .env after encrypting it strands every API key.

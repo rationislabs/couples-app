@@ -1,6 +1,6 @@
 """Checks for recipe slugs: one recipe per slug, always.
 
-    ledger_app/.venv/bin/python tests/test_recipes_slug.py
+    hearth/.venv/bin/python tests/test_recipes_slug.py
 
 Edit, delete and "cooked" look a recipe up by its slug. "Chili" and "Chili!"
 shared the slug `chili`, so a click on one acted on the other, and importing a
@@ -9,11 +9,11 @@ page whose title slugified the same replaced another recipe's ingredients.
 import asyncio
 import sqlite3
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 
 from sqlmodel import Session, select  # noqa: E402
 
-DB = _db.DATA / "ledger.db"
+DB = _db.DATA / "hearth.db"
 BEFORE = "7a1c0e5d2b44"
 
 
@@ -41,9 +41,9 @@ def test_migration_renames_duplicates_then_enforces_uniqueness():
 
 
 def test_unique_slug_and_import_never_reuses_another_recipe():
-    from ledger_app.core.models import Recipe
-    from ledger_app.core.state import ENGINE
-    from ledger_app.pages import recipes as R
+    from hearth.core.models import Recipe
+    from hearth.core.state import ENGINE
+    from hearth.pages import recipes as R
 
     with Session(ENGINE) as s:
         assert R.unique_slug(s, "Chili") == "chili-4"     # chili..chili-3 exist
@@ -72,9 +72,9 @@ def test_unique_slug_and_import_never_reuses_another_recipe():
 def test_a_slug_taken_meanwhile_gets_the_next_one():
     # Two saves of one name at once both picked the same free slug; the second commit hit
     # the unique index and the import died with busy still set.
-    from ledger_app.core.models import Recipe
-    from ledger_app.core.state import ENGINE
-    from ledger_app.pages import recipes as R
+    from hearth.core.models import Recipe
+    from hearth.core.state import ENGINE
+    from hearth.pages import recipes as R
 
     real, calls = R.unique_slug, []
 
@@ -102,7 +102,7 @@ def test_a_slug_taken_meanwhile_gets_the_next_one():
 
 
 def test_a_failed_save_never_leaves_the_import_button_locked():
-    from ledger_app.pages import recipes as R
+    from hearth.pages import recipes as R
 
     real = R._commit_with_free_slug
 

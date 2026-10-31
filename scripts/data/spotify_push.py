@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Write suggested tracks to Spotify. Dry run unless --apply.
 
-    ./ledger_app/.venv/bin/python spotify_push.py --add Whiskey --count 10
-    ./ledger_app/.venv/bin/python spotify_push.py --add Whiskey --count 10 --apply
-    ./ledger_app/.venv/bin/python spotify_push.py --new "Whiskey v2" --from Whiskey --apply
+    ./hearth/.venv/bin/python spotify_push.py --add Whiskey --count 10
+    ./hearth/.venv/bin/python spotify_push.py --add Whiskey --count 10 --apply
+    ./hearth/.venv/bin/python spotify_push.py --new "Whiskey v2" --from Whiskey --apply
 
 Three rules this script will not break:
 
@@ -27,7 +27,7 @@ import urllib.request
 from sqlmodel import Session, select                      # noqa: E402
 import spotify_sync as SS                                 # noqa: E402
 import vibe_tag as VT                                     # noqa: E402
-from ledger_app.core.models import Playlist                    # noqa: E402
+from hearth.core.models import Playlist                    # noqa: E402
 
 APPLY = "--apply" in sys.argv
 BATCH = 100          # Spotify's hard cap per add request
@@ -107,7 +107,7 @@ def new_from(new_name: str, source: str, count: int) -> None:
         return
     made = post(f"/users/{urllib.parse.quote(me)}/playlists", token, {
         "name": new_name, "public": False,
-        "description": f"Built from the tag profile of {name}. media-ledger."})
+        "description": f"Built from the tag profile of {name}. hearth."})
     pid = made["id"]
     uris = [f"spotify:track:{t.spotify_id}" for _c, t in rows]
     for i in range(0, len(uris), BATCH):

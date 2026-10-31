@@ -16,10 +16,10 @@ from collections import Counter
 
 from sqlmodel import Session, create_engine, delete, select
 
-from ledger_app.core.models import ConvoQuestion  # noqa: E402
-from ledger_app.core.paths import db_path  # noqa: E402
+from hearth.core.models import ConvoQuestion  # noqa: E402
+from hearth.core.paths import db_path  # noqa: E402
 
-APP = pathlib.Path(__file__).resolve().parents[2] / "ledger_app"
+APP = pathlib.Path(__file__).resolve().parents[2] / "hearth"
 ENGINE = create_engine(f"sqlite:///{db_path()}")
 AUDIENCES = {"new-people", "dating", "couples", "long-distance", "friends",
              "life", "love", "self", "childhood", "philosophy", "journal",

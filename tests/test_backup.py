@@ -4,7 +4,7 @@ A backup job that reports success without proving the file restores is how
 you find out at the worst moment, so every write is verified, and every
 failure path here must refuse rather than half-work.
 
-    ledger_app/.venv/bin/python tests/test_backup.py
+    hearth/.venv/bin/python tests/test_backup.py
 """
 import gzip
 import os
@@ -17,22 +17,22 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import _db  # noqa: E402
 _db.migrate()
 
-from ledger_app.core import backup as B                         # noqa: E402
+from hearth.core import backup as B                         # noqa: E402
 
-DB = _db.DATA / "ledger.db"
+DB = _db.DATA / "hearth.db"
 DEST = _db.DATA / "backups"
-os.environ["LEDGER_BACKUP_DIR"] = str(DEST)
+os.environ["HEARTH_BACKUP_DIR"] = str(DEST)
 T0 = datetime(2026, 10, 1, 3, 30)
 
 
 def test_write_then_verify():
-    out = B.write(DB, DEST, "ledger-20261001-033000.db")
-    assert out.name == "ledger-20261001-033000.db.gz"
+    out = B.write(DB, DEST, "hearth-20261001-033000.db")
+    assert out.name == "hearth-20261001-033000.db.gz"
     assert B.verify(out).startswith("verified ")
 
 
 def test_a_corrupt_file_fails_verification():
-    bad = DEST / "ledger-19990101-000000.db.gz"
+    bad = DEST / "hearth-19990101-000000.db.gz"
     with gzip.open(bad, "wb") as g:
         g.write(b"this is not a database")
     try:
@@ -47,11 +47,11 @@ def test_a_corrupt_file_fails_verification():
 
 def test_prune_keeps_the_newest_and_leaves_the_other_kind():
     for i in range(4):
-        B.write(DB, DEST, f"ledger-2026090{i}-033000.db")
-        B.write(DB, DEST, f"ledger-prestart-2026090{i}-120000.db")
+        B.write(DB, DEST, f"hearth-2026090{i}-033000.db")
+        B.write(DB, DEST, f"hearth-prestart-2026090{i}-120000.db")
     B.prune(DEST, B.NIGHTLY, 2)
     nightly = sorted(p.name for p in DEST.glob(B.NIGHTLY))
-    assert nightly[-2:] == ["ledger-20260903-033000.db.gz", "ledger-20261001-033000.db.gz"]
+    assert nightly[-2:] == ["hearth-20260903-033000.db.gz", "hearth-20261001-033000.db.gz"]
     assert len(nightly) == 2
     assert len(list(DEST.glob(B.PRESTART))) == 4, "pruning nightlies touched prestart files"
 
@@ -79,13 +79,13 @@ def test_nightly_records_success():
 
 
 def test_keep_zero_keeps_the_backup_just_written():
-    os.environ["LEDGER_BACKUP_KEEP"] = "0"
+    os.environ["HEARTH_BACKUP_KEEP"] = "0"
     try:
         ok, msg = B.nightly(T0 + timedelta(days=9))
         assert ok, msg
         assert (DEST / msg.split()[1].rstrip(";")).exists(), msg
     finally:
-        del os.environ["LEDGER_BACKUP_KEEP"]
+        del os.environ["HEARTH_BACKUP_KEEP"]
 
 
 def test_restore_refuses_a_bad_file():
@@ -103,16 +103,16 @@ def test_restore_refuses_a_bad_file():
 
 
 def test_restore_keeps_the_current_database_aside():
-    good = B.write(DB, DEST, "ledger-20261002-033000.db")
+    good = B.write(DB, DEST, "hearth-20261002-033000.db")
     aside = B.restore(good, DB)
-    assert aside.name == "ledger.db.before-restore" and aside.exists()
+    assert aside.name == "hearth.db.before-restore" and aside.exists()
     assert B.verify(good)
     aside.unlink()
 
 
 def test_restore_twice_never_overwrites_the_first_aside():
     original = DB.read_bytes()
-    good = B.write(DB, DEST, "ledger-20261003-033000.db")
+    good = B.write(DB, DEST, "hearth-20261003-033000.db")
     a1 = B.restore(good, DB)
     restored = DB.read_bytes()
     a2 = B.restore(good, DB)
@@ -129,14 +129,14 @@ def test_failed_write_leaves_no_partial_file():
         raise OSError("disk full")
     B.shutil.copyfileobj = boom
     try:
-        B.write(DB, DEST, "ledger-20261004-033000.db")
+        B.write(DB, DEST, "hearth-20261004-033000.db")
     except OSError:
         pass
     else:
         raise AssertionError("write swallowed the OSError")
     finally:
         B.shutil.copyfileobj = real
-    assert not list(DEST.glob("ledger-20261004-*.db.gz")), "partial backup left behind"
+    assert not list(DEST.glob("hearth-20261004-*.db.gz")), "partial backup left behind"
 
 
 if __name__ == "__main__":

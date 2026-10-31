@@ -5,7 +5,7 @@ different answers, and that one person's answer is not the other's. Both are
 easy to lose in a control that only toggles, so both are asserted here.
 People are slots "1" and "2"; their names live in the user table.
 
-    ledger_app/.venv/bin/python tests/test_verdicts.py
+    hearth/.venv/bin/python tests/test_verdicts.py
 """
 import pathlib
 import sys
@@ -16,10 +16,10 @@ _db.migrate()
 
 from sqlmodel import Session, select                       # noqa: E402
 
-from ledger_app.core import household as H                      # noqa: E402
-from ledger_app.core import verdicts as V                       # noqa: E402
-from ledger_app.core.models import Verdict                      # noqa: E402
-from ledger_app.core.state import ENGINE                        # noqa: E402
+from hearth.core import household as H                      # noqa: E402
+from hearth.core import verdicts as V                       # noqa: E402
+from hearth.core.models import Verdict                      # noqa: E402
+from hearth.core.state import ENGINE                        # noqa: E402
 
 KIND = "test-verdict-kind"
 ROW = 424242
@@ -84,10 +84,10 @@ def test_every_voting_table_filters_by_vote_and_by_done():
     """Library, recipes, games and places, in memory: rows and verdicts are set
     on the state, nothing is written."""
     import reflex as rx
-    from ledger_app.core.state import LedgerState
-    from ledger_app.pages.dates import DateState
-    from ledger_app.pages.games import GameState
-    from ledger_app.pages.recipes import RecipeState
+    from hearth.core.state import HearthState
+    from hearth.pages.dates import DateState
+    from hearth.pages.games import GameState
+    from hearth.pages.recipes import RecipeState
     root = rx.State(_reflex_internal_init=True)
     sub = lambda S: root.get_substate(S.get_full_name().split(".")[1:])
     votes = {"1": {"1": V.UP}, "2": {"2": V.DOWN}}
@@ -121,7 +121,7 @@ def test_every_voting_table_filters_by_vote_and_by_done():
     d.set_unvoted("1");  assert ids() == [3]
     d.set_tried("no");       d.set_unvoted("1")
 
-    lib = sub(LedgerState)
+    lib = sub(HearthState)
     lib._rows = [{"id": 10**9 + i, "name": f"t{i}", "watch_state": s}
                  for i, s in enumerate(("watched", "watching", "unwatched"))]
     lib.set_tried("watching")

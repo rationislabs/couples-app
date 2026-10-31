@@ -29,7 +29,7 @@ class SetupState(rx.State):
         self.latlon = f"{home[0]},{home[1]}" if home else ""
         self.place, self.error = "", ""
         self.backup_status = H.backup_status(datetime.now())
-        self.version = os.environ.get("LEDGER_VERSION", "dev")
+        self.version = os.environ.get("HEARTH_VERSION", "dev")
 
     @rx.event
     def set_first(self, v: str):
@@ -53,7 +53,7 @@ class SetupState(rx.State):
         scripts/data/geocode_places.py already uses. Needs the internet."""
         from geopy.geocoders import Nominatim
         try:
-            hit = Nominatim(user_agent="couples-app", timeout=5).geocode(self.place)
+            hit = Nominatim(user_agent="hearth", timeout=5).geocode(self.place)
         except Exception as e:          # offline, rate limited, timed out
             self.error = f"Lookup failed ({e}). Type lat,lon instead."
             return

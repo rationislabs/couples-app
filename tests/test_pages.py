@@ -10,18 +10,18 @@ browser, so they are pinned here against the registrations.
 import pathlib
 import re
 
-SRC = pathlib.Path(__file__).resolve().parents[1] / "ledger_app" / "ledger_app"
+SRC = pathlib.Path(__file__).resolve().parents[1] / "hearth" / "hearth"
 
 
 def registration(route: str) -> str:
-    text = (SRC / "ledger_app.py").read_text()
+    text = (SRC / "hearth.py").read_text()
     m = re.search(r'themed_page\([^)]*route="' + re.escape(route) + r'".*?\)\n', text, re.S)
     assert m, route
     return m.group(0)
 
 
 def test_no_page_also_loads_on_mount():
-    pages = [SRC / "ledger_app.py", *sorted((SRC / "pages").glob("*.py"))]
+    pages = [SRC / "hearth.py", *sorted((SRC / "pages").glob("*.py"))]
     hits = [f"{p.name}:{n}" for p in pages
             for n, line in enumerate(p.read_text().splitlines(), 1) if "on_mount=" in line]
     assert not hits, f"on_load already loads these pages: {hits}"

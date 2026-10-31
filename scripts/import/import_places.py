@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Add places to the Date Tracking wishlist, from a pasted list or from Takeout.
 
-    ./ledger_app/.venv/bin/python import_places.py                      # dry run
-    ./ledger_app/.venv/bin/python import_places.py --apply
-    ./ledger_app/.venv/bin/python import_places.py --csv ~/Downloads --lists
-    ./ledger_app/.venv/bin/python import_places.py --csv ~/Downloads --apply
+    ./hearth/.venv/bin/python import_places.py                      # dry run
+    ./hearth/.venv/bin/python import_places.py --apply
+    ./hearth/.venv/bin/python import_places.py --csv ~/Downloads --lists
+    ./hearth/.venv/bin/python import_places.py --csv ~/Downloads --apply
 
 Google Takeout is the only route that yields a whole saved list with its URLs.
 Select `Saved` in Takeout and you get one CSV per list (`Title,Note,URL`); point
@@ -31,8 +31,8 @@ import urllib.request
 import zipfile
 
 from sqlmodel import Session, create_engine, select      # noqa: E402
-from ledger_app.core.models import Place                      # noqa: E402
-from ledger_app.core.paths import db_path, json_dir           # noqa: E402
+from hearth.core.models import Place                      # noqa: E402
+from hearth.core.paths import db_path, json_dir           # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parents[2]
 ENGINE = create_engine(f"sqlite:///{db_path()}")

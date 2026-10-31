@@ -8,12 +8,12 @@ import sys
 
 from sqlmodel import Session, select                       # noqa: E402
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.pages.convo import AUDIENCES, DEPTHS             # noqa: E402
-from ledger_app.core.models import ConvoQuestion                # noqa: E402
-from ledger_app.core.state import ENGINE                        # noqa: E402
+from hearth.pages.convo import AUDIENCES, DEPTHS             # noqa: E402
+from hearth.core.models import ConvoQuestion                # noqa: E402
+from hearth.core.state import ENGINE                        # noqa: E402
 
 
 def seed() -> list[int]:
@@ -104,7 +104,7 @@ def test_removed_questions_are_never_offered():
 
 
 def _state():
-    from ledger_app.pages.convo import ConvoState
+    from hearth.pages.convo import ConvoState
     st = ConvoState(_reflex_internal_init=True)
     st.load()
     return st

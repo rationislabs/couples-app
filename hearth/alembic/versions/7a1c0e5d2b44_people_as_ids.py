@@ -22,9 +22,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def _names(conn) -> list[str]:
-    """The two people, slot order. LEDGER_PEOPLE wins; otherwise whoever has
+    """The two people, slot order. HEARTH_PEOPLE wins; otherwise whoever has
     voted or owns a garment. Raises before anything has changed."""
-    env = [p.strip().lower() for p in os.environ.get("LEDGER_PEOPLE", "").split(",")
+    env = [p.strip().lower() for p in os.environ.get("HEARTH_PEOPLE", "").split(",")
            if p.strip()]
     seen = sorted({r[0] for r in conn.execute(sa.text(
         "select person from verdict union select owner from garment where owner != ''"))})
@@ -33,13 +33,13 @@ def _names(conn) -> list[str]:
     if unknown or len(names) > 2:
         raise RuntimeError(
             f"people-as-ids: cannot map {unknown or names} onto two people. "
-            "Set LEDGER_PEOPLE to the two names your votes use and run it again. "
+            "Set HEARTH_PEOPLE to the two names your votes use and run it again. "
             "Nothing was changed.")
     return names
 
 
 def _home() -> tuple[float | None, float | None]:
-    raw = os.environ.get("LEDGER_HOME_LATLON", "")
+    raw = os.environ.get("HEARTH_HOME_LATLON", "")
     try:
         lat, lon = (float(x) for x in raw.split(","))
     except ValueError:
@@ -101,5 +101,5 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     raise NotImplementedError(
-        "No automatic downgrade: restore the ledger-prestart-*.db.gz backup taken before "
+        "No automatic downgrade: restore the hearth-prestart-*.db.gz backup taken before "
         "this migration ran (README, 'Rolling back').")

@@ -6,7 +6,7 @@
 **/.states
 **/*.egg-info
 **/reflex.log
-ledger_app/ledger.db*
+hearth/hearth.db*
 backups
 gallery
 json

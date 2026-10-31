@@ -1,6 +1,6 @@
 """Where the app keeps its data.
 
-LEDGER_DATA_DIR puts the database, the photos and the API caches in one
+HEARTH_DATA_DIR puts the database, the photos and the API caches in one
 directory; the container sets it to /data, its volume. Unset, every path is
 where it has always been, so an existing install does not move.
 
@@ -10,18 +10,34 @@ after this module is loaded.
 import os
 import pathlib
 
-APP = pathlib.Path(__file__).resolve().parents[2]    # ledger_app/
+APP = pathlib.Path(__file__).resolve().parents[2]    # hearth/
 ROOT = APP.parent                                    # the repo root
 
 
 def _data() -> pathlib.Path | None:
-    d = os.environ.get("LEDGER_DATA_DIR")
+    d = os.environ.get("HEARTH_DATA_DIR")
     return pathlib.Path(d) if d else None
 
 
 def db_path() -> pathlib.Path:
     d = _data()
-    return d / "ledger.db" if d else APP / "ledger.db"
+    db = d / "hearth.db" if d else APP / "hearth.db"
+    if not db.exists():
+        _adopt_ledger_db(db)
+    return db
+
+
+def _adopt_ledger_db(db: pathlib.Path) -> None:
+    """Before the rename to Hearth the database was ledger.db, and a host
+    install kept it in ledger_app/, which a git pull leaves behind. Move it
+    (with its -wal and -shm) once, so an update never opens an empty one."""
+    for old in (db.with_name("ledger.db"), ROOT / "ledger_app" / "ledger.db"):
+        if old.exists():
+            for suffix in ("", "-wal", "-shm"):
+                src = pathlib.Path(f"{old}{suffix}")
+                if src.exists():
+                    os.replace(src, f"{db}{suffix}")
+            return
 
 
 def gallery_dir() -> pathlib.Path:
@@ -35,7 +51,14 @@ def json_dir() -> pathlib.Path:
 
 
 def backup_dir() -> pathlib.Path:
-    return pathlib.Path(os.environ.get("LEDGER_BACKUP_DIR", ROOT / "backups"))
+    d = pathlib.Path(os.environ.get("HEARTH_BACKUP_DIR", ROOT / "backups"))
+    # backups from before the rename take the new prefix, so pruning, verify
+    # and restore keep seeing them
+    for old in d.glob("ledger-*.db.gz"):
+        new = old.with_name("hearth-" + old.name.removeprefix("ledger-"))
+        if not new.exists():
+            os.replace(old, new)
+    return d
 
 
 def secrets_dir() -> pathlib.Path:

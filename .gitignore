@@ -10,21 +10,21 @@ spotify_refresh_token
 *.key
 
 # --- the data itself ---------------------------------------------------------
-# ledger.db holds your places, the date log and the private pages. It is
+# hearth.db holds your places, the date log and the private pages. It is
 # personal data, it is binary, and it changes on every click, so every commit
 # would store a fresh copy. Back it up with ./backup_db.sh instead.
-ledger_app/ledger.db
-ledger_app/ledger.db-wal
-ledger_app/ledger.db-shm
+hearth/hearth.db
+hearth/hearth.db-wal
+hearth/hearth.db-shm
 backups/
 
 # Alembic migrations are deliberately NOT ignored: they are the schema's
 # history and the only way to rebuild the database from nothing.
 
 # --- generated at runtime ----------------------------------------------------
-# Written by ledger_app/ledger_app/pages/dates.py on every filter change while the map is open.
+# Written by hearth/hearth/pages/dates.py on every filter change while the map is open.
 assets/places_map.html
-ledger_app/.web/public/places_map.html
+hearth/.web/public/places_map.html
 
 # Importer inputs. Ignored as a whole directory, not file by file.
 csv/
@@ -37,7 +37,7 @@ gallery/
 # The lists and API caches. Personal viewing data, and the caches are
 # regenerable API responses.
 json/
-ledger_app/reflex.log
+hearth/reflex.log
 job_log*
 
 # --- bulk sources, far too large for a repo ----------------------------------
@@ -46,11 +46,11 @@ pdfs/
 *.zip
 
 # --- build and environment ---------------------------------------------------
-ledger_app/.venv/
-# Build artefact of `uv pip install -e .` (ledger_app/pyproject.toml).
+hearth/.venv/
+# Build artefact of `uv pip install -e .` (hearth/pyproject.toml).
 *.egg-info/
-ledger_app/.web/
-ledger_app/.states/
+hearth/.web/
+hearth/.states/
 .states/
 __pycache__/
 *.py[cod]

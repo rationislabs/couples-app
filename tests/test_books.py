@@ -13,12 +13,12 @@ import sys
 
 from sqlmodel import Session, select                     # noqa: E402
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.pages.books import BookState, SHELVES          # noqa: E402
-from ledger_app.core.models import Book                       # noqa: E402
-from ledger_app.core.state import ENGINE                      # noqa: E402
+from hearth.pages.books import BookState, SHELVES          # noqa: E402
+from hearth.core.models import Book                       # noqa: E402
+from hearth.core.state import ENGINE                      # noqa: E402
 
 PREFIX = "zz-book-test"
 MADE: list[int] = []

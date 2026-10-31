@@ -15,11 +15,11 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - run: |
-          uv venv ledger_app/.venv --python 3.12
-          VIRTUAL_ENV=ledger_app/.venv uv pip install -r ledger_app/requirements.txt
-          VIRTUAL_ENV=ledger_app/.venv uv pip install --no-deps -e ledger_app
+          uv venv hearth/.venv --python 3.12
+          VIRTUAL_ENV=hearth/.venv uv pip install -r hearth/requirements.txt
+          VIRTUAL_ENV=hearth/.venv uv pip install --no-deps -e hearth
       - run: tests/run.sh
-      - run: uvx pip-audit==2.10.1 -r ledger_app/requirements.txt
+      - run: uvx pip-audit==2.10.1 -r hearth/requirements.txt
 
   image:
     runs-on: ubuntu-latest

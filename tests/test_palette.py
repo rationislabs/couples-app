@@ -12,9 +12,9 @@ import shutil
 import subprocess
 import sys
 
-import _db  # noqa: F401  (first: never the real ledger.db)
+import _db  # noqa: F401  (first: never the real hearth.db)
 
-KEYS = pathlib.Path(__file__).resolve().parents[1] / "ledger_app" / "assets" / "keys.js"
+KEYS = pathlib.Path(__file__).resolve().parents[1] / "hearth" / "assets" / "keys.js"
 
 # The IIFE keeps its own names, so the two functions are lifted out by source
 # slice rather than imported. If either is renamed this fails loudly, which is
@@ -102,7 +102,7 @@ def test_every_verb_label_is_lowercase_and_trimmed():
 
 
 def test_every_target_is_a_real_route():
-    from ledger_app.core import ui
+    from hearth.core import ui
     src = KEYS.read_text()
     block = src[src.index("const PLACES = ["):src.index("];", src.index("const PLACES = ["))]
     hrefs = [ln.split('"')[3] for ln in block.split("\n") if ln.strip().startswith('["')]

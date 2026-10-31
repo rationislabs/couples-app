@@ -10,14 +10,14 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=uv /uv /bin/uv
 # The venv lives where the app looks for it: pages start scripts with
-# ledger_app/.venv/bin/python (core/state.py:721, pages/music.py, pages/dates.py:841).
-ENV VIRTUAL_ENV=/app/ledger_app/.venv PATH=/app/ledger_app/.venv/bin:$PATH
+# hearth/.venv/bin/python (core/state.py:721, pages/music.py, pages/dates.py:841).
+ENV VIRTUAL_ENV=/app/hearth/.venv PATH=/app/hearth/.venv/bin:$PATH
 RUN uv venv $VIRTUAL_ENV
-COPY ledger_app/requirements.txt /app/ledger_app/requirements.txt
-RUN uv pip install -r /app/ledger_app/requirements.txt
+COPY hearth/requirements.txt /app/hearth/requirements.txt
+RUN uv pip install -r /app/hearth/requirements.txt
 COPY . /app
-RUN uv pip install --no-deps -e /app/ledger_app
-WORKDIR /app/ledger_app
+RUN uv pip install --no-deps -e /app/hearth
+WORKDIR /app/hearth
 # Ports pinned for the export: unset, `reflex export` bakes the default backend
 # URL (http://localhost:8000, reflex_base/config.py:210) into the frontend, and
 # the websocket would dial a port nothing listens on.
@@ -26,20 +26,20 @@ RUN REFLEX_FRONTEND_PORT=3000 REFLEX_BACKEND_PORT=3000 \
  && rm -rf .web/node_modules
 
 FROM python:3.12-slim@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704
-ARG LEDGER_VERSION=dev
+ARG HEARTH_VERSION=dev
 RUN apt-get update \
  && apt-get install -y --no-install-recommends tzdata \
  && rm -rf /var/lib/apt/lists/* \
  && useradd --uid 10001 --create-home app
 COPY --from=build --chown=app:app /app /app
-ENV VIRTUAL_ENV=/app/ledger_app/.venv PATH=/app/ledger_app/.venv/bin:$PATH REFLEX_ENV_MODE=prod \
-    LEDGER_DATA_DIR=/data LEDGER_BACKUP_DIR=/backups LEDGER_BACKUP_SCHEDULE=1 \
-    LEDGER_VERSION=$LEDGER_VERSION TZ=UTC
+ENV VIRTUAL_ENV=/app/hearth/.venv PATH=/app/hearth/.venv/bin:$PATH REFLEX_ENV_MODE=prod \
+    HEARTH_DATA_DIR=/data HEARTH_BACKUP_DIR=/backups HEARTH_BACKUP_SCHEDULE=1 \
+    HEARTH_VERSION=$HEARTH_VERSION TZ=UTC
 RUN mkdir -p /data /backups && chown app:app /data /backups
-WORKDIR /app/ledger_app
+WORKDIR /app/hearth
 # Runtime writes (docker diff, 2026-10-05, after GET / and /ping only): .pyc files
 # under /app (__pycache__; PYTHONDONTWRITEBYTECODE=1 would stop them) and
-# /app/ledger_app/.web/backend/upload_is_used. Not exercised: ledger.db and
+# /app/hearth/.web/backend/upload_is_used. Not exercised: hearth.db and
 # .states appear only once pages use state and the database.
 USER app
 VOLUME ["/data", "/backups"]

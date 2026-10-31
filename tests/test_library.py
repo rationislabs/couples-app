@@ -7,11 +7,11 @@ Rows are named with a "zz-lib-test" prefix and deleted at the end.
 """
 from sqlmodel import Session, select                     # noqa: E402
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.core.models import Title, TitleGenre          # noqa: E402
-from ledger_app.core.state import ENGINE, LedgerState         # noqa: E402
+from hearth.core.models import Title, TitleGenre          # noqa: E402
+from hearth.core.state import ENGINE, HearthState         # noqa: E402
 
 NAME = "zz-lib-test-dune"
 
@@ -30,7 +30,7 @@ def test_a_hand_pick_fills_the_title():
     with Session(ENGINE) as s:
         s.add(Title(name=NAME, medium="movie"))
         s.commit()
-    st = LedgerState(_reflex_internal_init=True)
+    st = HearthState(_reflex_internal_init=True)
     st._ambig = {NAME: {"medium": "movie", "why": "two matches", "candidates": [
         {"title": "Dune", "orig": "", "year": "2021", "kind": "movie",
          "overview": "A desert planet.", "genres": ["Science Fiction"], "votes": 1}]}}

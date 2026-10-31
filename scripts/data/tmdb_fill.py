@@ -24,10 +24,10 @@ import datetime as dt
 import difflib, json, os, pathlib, re, sys, time, urllib.parse, urllib.request
 
 from sqlmodel import Session, create_engine, select
-from ledger_app.core.models import Genre, Title, TitleGenre  # noqa: E402
-from ledger_app.core.paths import atomic_write_text, db_path, json_dir  # noqa: E402
+from hearth.core.models import Genre, Title, TitleGenre  # noqa: E402
+from hearth.core.paths import atomic_write_text, db_path, json_dir  # noqa: E402
 
-APP = pathlib.Path(__file__).resolve().parents[2] / "ledger_app"
+APP = pathlib.Path(__file__).resolve().parents[2] / "hearth"
 ENGINE = create_engine(f"sqlite:///{db_path()}")
 APPLY = "--apply" in sys.argv
 REVIEW_ONLY = "--review" in sys.argv

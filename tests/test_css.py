@@ -1,4 +1,4 @@
-"""Structural checks on assets/ledger.css.
+"""Structural checks on assets/hearth.css.
 
 These exist because of a real failure: the bubbly block sat at the end of the
 file, and a script that rebuilt the tail from the generated marker onward
@@ -11,9 +11,9 @@ import pathlib
 import re
 import sys
 
-import _db  # noqa: F401  (first: never the real ledger.db)
+import _db  # noqa: F401  (first: never the real hearth.db)
 
-CSS = pathlib.Path(__file__).resolve().parents[1] / "ledger_app" / "assets" / "ledger.css"
+CSS = pathlib.Path(__file__).resolve().parents[1] / "hearth" / "assets" / "hearth.css"
 BEGIN = "/* == GENERATED: page ramps."
 END = "/* == END GENERATED == */"
 
@@ -63,7 +63,7 @@ def test_no_page_still_sets_container_padding_inline():
     """An inline padding on rx.container beats every gutter rule here."""
     import pathlib as _p
     # rglob: the package is split into core/ and pages/, a flat glob misses both
-    for f in (_p.Path(__file__).resolve().parents[1] / "ledger_app" / "ledger_app").rglob("*.py"):
+    for f in (_p.Path(__file__).resolve().parents[1] / "hearth" / "hearth").rglob("*.py"):
         assert 'padding="1.75rem 1.5rem"' not in f.read_text(), f.name
 
 
@@ -80,7 +80,7 @@ def test_the_navbar_breaks_out_of_the_container():
 
     # An inline width on the hstack beats all of the above, silently.
     import pathlib as _p
-    ui = (_p.Path(__file__).resolve().parents[1] / "ledger_app" / "ledger_app" / "core" / "ui.py").read_text()
+    ui = (_p.Path(__file__).resolve().parents[1] / "hearth" / "hearth" / "core" / "ui.py").read_text()
     bar = ui[ui.index("def navbar("):ui.index("def chip(")]
     code = "\n".join(l for l in bar.split("\n")
                      if not l.lstrip().startswith("#"))
@@ -91,21 +91,21 @@ def test_the_navbar_emoji_turn_over_daily():
     """Same five all day, a different five tomorrow, and the navbar reads the
     state var rather than a string frozen into the cached build."""
     from datetime import date, timedelta
-    from ledger_app.core.ui import daily_emoji
+    from hearth.core.ui import daily_emoji
     d = date(2000, 1, 1)
     assert daily_emoji(d) == daily_emoji(d)
     assert len(set(daily_emoji(d))) == 5
     week = {daily_emoji(d + timedelta(n)) for n in range(7)}
     assert len(week) == 7, "the set did not change from day to day"
-    assert "NavState.emoji" in (pathlib.Path(__file__).resolve().parents[1] / "ledger_app"
-                                / "ledger_app" / "core" / "ui.py").read_text()
+    assert "NavState.emoji" in (pathlib.Path(__file__).resolve().parents[1] / "hearth"
+                                / "hearth" / "core" / "ui.py").read_text()
 
 
 def test_every_paged_table_has_prev_next_above_and_below():
     """Two pairs per paged table, so a long page never needs scrolling back up.
     Rendered rather than grepped: catalog_table is one function drawing two tables."""
-    from ledger_app import ledger_app as L
-    from ledger_app.pages import convo, dates, music, recipes
+    from hearth import hearth as L
+    from hearth.pages import convo, dates, music, recipes
     # convo's question card carries a Prev/Next pair of its own
     for name, page, want in (("library", L.index, 2),
                              ("convo", convo.page, 3), ("dates", dates.page, 2),
@@ -118,8 +118,8 @@ def test_the_phone_menu_lists_every_tab_and_marks_this_page():
     """Below 48em the tabs fold into a menu. Every tab has to be in it, the page
     you are on is the one marked, and each entry navigates through on_select —
     an rx.link child under as_child crashed the page the moment it opened."""
-    from ledger_app.core.ui import TABS
-    from ledger_app.pages import convo
+    from hearth.core.ui import TABS
+    from hearth.pages import convo
     js = str(convo.page().render())
     assert js.count("nav-menu-item room-") == len(TABS)
     assert js.count("nav-menu-item room-private on") == 1
@@ -139,7 +139,7 @@ def test_phone_tables_scroll_in_one_place():
     the box around it both scrolled sideways. It belongs on the table inside
     Radix's own scroll viewport."""
     import re as _re
-    src = CSS.parent.parent / "ledger_app"
+    src = CSS.parent.parent / "hearth"
     hits = [f"{f.name}:{n}" for f in sorted(src.rglob("*.py"))
             for n, line in enumerate(f.read_text().splitlines(), 1)
             if _re.search(r'min_width=\["34rem"', line)]

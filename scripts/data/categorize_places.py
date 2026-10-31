@@ -16,11 +16,11 @@ from collections import Counter
 
 from sqlmodel import Session, create_engine, select
 
-from ledger_app.core.models import Place            # noqa: E402
-from ledger_app.core.paths import db_path  # noqa: E402
-from ledger_app.core.place_types import classify     # noqa: E402
+from hearth.core.models import Place            # noqa: E402
+from hearth.core.paths import db_path  # noqa: E402
+from hearth.core.place_types import classify     # noqa: E402
 
-APP = pathlib.Path(__file__).resolve().parents[2] / "ledger_app"
+APP = pathlib.Path(__file__).resolve().parents[2] / "hearth"
 ENGINE = create_engine(f"sqlite:///{db_path()}")
 
 

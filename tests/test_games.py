@@ -8,13 +8,13 @@ import sys
 
 from sqlmodel import Session, select              # noqa: E402
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.pages.games import GameState            # noqa: E402
-from ledger_app.pages.home import HomeState             # noqa: E402
-from ledger_app.core.models import Game                # noqa: E402
-from ledger_app.core.state import ENGINE               # noqa: E402
+from hearth.pages.games import GameState            # noqa: E402
+from hearth.pages.home import HomeState             # noqa: E402
+from hearth.core.models import Game                # noqa: E402
+from hearth.core.state import ENGINE               # noqa: E402
 
 
 def seed() -> list[int]:

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Checks for ./ledger.sh watch
+# Checks for ./hearth.sh watch
 #
 # The watcher restarts production, so the two things worth testing are the two
 # that would make it harmful: that it ignores files it should not rebuild for,
@@ -7,14 +7,14 @@
 # connection check is not testable without a running app and is left to the
 # browser pass.
 #
-#     ./ledger_app/test_watch.sh
+#     ./hearth/test_watch.sh
 set -u
-fake=$(mktemp -d); mkdir -p "$fake/ledger_app/ledger_app" "$fake/ledger_app/assets"
-echo "x = 1" > "$fake/ledger_app/ledger_app/a.py"
+fake=$(mktemp -d); mkdir -p "$fake/hearth/hearth" "$fake/hearth/assets"
+echo "x = 1" > "$fake/hearth/hearth/a.py"
 stamp=$(mktemp)
 
 changed() {
-  find "$fake/ledger_app/ledger_app" "$fake/ledger_app/assets" -type f \
+  find "$fake/hearth/hearth" "$fake/hearth/assets" -type f \
        \( -name '*.py' -o -name '*.css' -o -name '*.js' \) \
        -newer "$stamp" -print -quit 2>/dev/null | grep -q .
 }
@@ -22,15 +22,15 @@ touch "$stamp"
 changed && { echo "FAIL: quiet tree reported a change"; exit 1; }
 echo "  ok  quiet tree reports nothing"
 
-sleep 1.1; echo "x = 2" > "$fake/ledger_app/ledger_app/a.py"
+sleep 1.1; echo "x = 2" > "$fake/hearth/hearth/a.py"
 changed || { echo "FAIL: edited .py not detected"; exit 1; }
 echo "  ok  an edited .py is detected"
 
-touch "$stamp"; sleep 1.1; echo "{}" > "$fake/ledger_app/ledger_app/ignore.json"
+touch "$stamp"; sleep 1.1; echo "{}" > "$fake/hearth/hearth/ignore.json"
 changed && { echo "FAIL: .json triggered a rebuild"; exit 1; }
 echo "  ok  a non-source file does not trigger"
 
-touch "$stamp"; sleep 1.1; echo "a{}" > "$fake/ledger_app/assets/x.css"
+touch "$stamp"; sleep 1.1; echo "a{}" > "$fake/hearth/assets/x.css"
 changed || { echo "FAIL: edited .css not detected"; exit 1; }
 echo "  ok  an edited .css is detected"
 

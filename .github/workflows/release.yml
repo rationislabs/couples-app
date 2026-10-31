@@ -15,9 +15,9 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
       - run: |
-          uv venv ledger_app/.venv --python 3.12
-          VIRTUAL_ENV=ledger_app/.venv uv pip install -r ledger_app/requirements.txt
-          VIRTUAL_ENV=ledger_app/.venv uv pip install --no-deps -e ledger_app
+          uv venv hearth/.venv --python 3.12
+          VIRTUAL_ENV=hearth/.venv uv pip install -r hearth/requirements.txt
+          VIRTUAL_ENV=hearth/.venv uv pip install --no-deps -e hearth
       - run: tests/run.sh
 
   publish:
@@ -37,18 +37,18 @@ jobs:
       # env, never through ${{ }} inside the script.
       - run: |
           docker build --platform linux/amd64 \
-            --build-arg LEDGER_VERSION="$VERSION" \
-            -t "ghcr.io/rationislabs/couples-app:$VERSION" \
-            -t ghcr.io/rationislabs/couples-app:latest .
+            --build-arg HEARTH_VERSION="$VERSION" \
+            -t "ghcr.io/rationislabs/hearth:$VERSION" \
+            -t ghcr.io/rationislabs/hearth:latest .
         env:
           VERSION: ${{ steps.v.outputs.version }}
       - run: tests/test_image.sh
         env:
-          IMAGE: ghcr.io/rationislabs/couples-app:${{ steps.v.outputs.version }}
+          IMAGE: ghcr.io/rationislabs/hearth:${{ steps.v.outputs.version }}
           SKIP_BUILD: "1"
       - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - run: docker push --all-tags ghcr.io/rationislabs/couples-app
+      - run: docker push --all-tags ghcr.io/rationislabs/hearth

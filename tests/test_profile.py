@@ -4,7 +4,7 @@ The server cannot tell the two people apart (one tailnet identity can cover
 both phones), so the browser says who is holding it. Anything but "1" or "2"
 must mean nobody, never a third person.
 
-    ledger_app/.venv/bin/python tests/test_profile.py
+    hearth/.venv/bin/python tests/test_profile.py
 """
 import pathlib
 import sys
@@ -15,8 +15,8 @@ _db.migrate()
 
 import reflex as rx                                         # noqa: E402
 
-from ledger_app.core import household as H                      # noqa: E402
-from ledger_app.core.profile import ProfileState                # noqa: E402
+from hearth.core import household as H                      # noqa: E402
+from hearth.core.profile import ProfileState                # noqa: E402
 
 H.set_names("Alex", "Sam")
 
@@ -44,8 +44,8 @@ def test_stale_profile_is_nobody():
 async def test_a_vote_without_the_matching_profile_is_refused():
     """The buttons are disabled for the other person, but the handler must not
     trust that: a vote counts only for the person this browser selected."""
-    from ledger_app.core import verdicts as V
-    from ledger_app.pages.games import GameState
+    from hearth.core import verdicts as V
+    from hearth.pages.games import GameState
     root = rx.State(_reflex_internal_init=True)
     p = root.get_substate(ProfileState.get_full_name().split(".")[1:])
     g = root.get_substate(GameState.get_full_name().split(".")[1:])

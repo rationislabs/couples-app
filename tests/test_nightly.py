@@ -3,7 +3,7 @@
 Nobody reads container logs, so a failure has to land where the header
 banner can see it, and the loop has to survive it.
 
-    ledger_app/.venv/bin/python tests/test_nightly.py
+    hearth/.venv/bin/python tests/test_nightly.py
 """
 import os
 import sqlite3
@@ -15,10 +15,10 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import _db  # noqa: E402
 _db.migrate()
 
-from ledger_app.core import backup as B                         # noqa: E402
-from ledger_app.core import household as H                      # noqa: E402
+from hearth.core import backup as B                         # noqa: E402
+from hearth.core import household as H                      # noqa: E402
 
-DB = _db.DATA / "ledger.db"
+DB = _db.DATA / "hearth.db"
 
 
 def test_seconds_until():
@@ -31,11 +31,11 @@ def test_seconds_until():
 def test_failure_is_recorded_and_not_raised():
     blocker = _db.DATA / "not-a-dir"
     blocker.write_text("a file where the backups directory should be")
-    os.environ["LEDGER_BACKUP_DIR"] = str(blocker)
+    os.environ["HEARTH_BACKUP_DIR"] = str(blocker)
     try:
         ok, msg = B.nightly(datetime(2026, 10, 1, 3, 30))
     finally:
-        del os.environ["LEDGER_BACKUP_DIR"]
+        del os.environ["HEARTH_BACKUP_DIR"]
     assert ok is False and msg.startswith("backup FAILED")
     assert H.backup_warning(datetime(2026, 10, 1, 3, 31)).startswith("Last backup failed")
 
@@ -54,28 +54,28 @@ def test_due_at_start():
 
 
 def test_backup_at_falls_back():
-    old = os.environ.get("LEDGER_BACKUP_AT")
+    old = os.environ.get("HEARTH_BACKUP_AT")
     try:
         for bad in ("0330", "25:00", "abc", "", "03:60"):
-            os.environ["LEDGER_BACKUP_AT"] = bad
+            os.environ["HEARTH_BACKUP_AT"] = bad
             assert B.backup_at() == "03:30", bad
-        os.environ["LEDGER_BACKUP_AT"] = "06:15"
+        os.environ["HEARTH_BACKUP_AT"] = "06:15"
         assert B.backup_at() == "06:15"
     finally:
         if old is None:
-            os.environ.pop("LEDGER_BACKUP_AT", None)
+            os.environ.pop("HEARTH_BACKUP_AT", None)
         else:
-            os.environ["LEDGER_BACKUP_AT"] = old
+            os.environ["HEARTH_BACKUP_AT"] = old
 
 
 def test_prestart_does_not_reset_the_banner():
     now = datetime(2026, 10, 1, 12, 0)
     B.record(DB, False, "disk full", now - timedelta(hours=1))
-    os.environ["LEDGER_BACKUP_DIR"] = str(_db.DATA / "prestart-backups")
+    os.environ["HEARTH_BACKUP_DIR"] = str(_db.DATA / "prestart-backups")
     try:
         B.prestart(now)
     finally:
-        del os.environ["LEDGER_BACKUP_DIR"]
+        del os.environ["HEARTH_BACKUP_DIR"]
     assert H.backup_warning(now).startswith("Last backup failed")
     assert B.due_at_start(DB, now) is True
 

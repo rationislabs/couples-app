@@ -6,7 +6,7 @@ already called them one room — "a page with one row in it does not need a
 personality" — and the navigation never followed. This is the page that
 follows it.
 
-The four old routes still resolve; they redirect here (ledger_app.py), because
+The four old routes still resolve; they redirect here (hearth.py), because
 a phone has them bookmarked.
 """
 import reflex as rx

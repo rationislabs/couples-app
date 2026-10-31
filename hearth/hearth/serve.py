@@ -6,7 +6,7 @@
 This starts only the backend and mounts the compiled frontend into it — the
 mount `reflex run --env preview` uses (`exec.get_frontend_mount`).
 
-    python -m ledger_app.serve        # from ledger_app/, where rxconfig.py is
+    python -m hearth.serve        # from hearth/, where rxconfig.py is
 """
 import os
 
@@ -21,7 +21,7 @@ environment.REFLEX_SKIP_COMPILE.set(True)
 
 if __name__ == "__main__":
     rx_exec.run_backend_prod(
-        os.environ.get("LEDGER_BIND_HOST", "127.0.0.1"),
+        os.environ.get("HEARTH_BIND_HOST", "127.0.0.1"),
         int(os.environ.get("PORT", "3000")),
         mount_frontend_compiled_app=True,
     )

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Mirror Spotify playlists and their tracks into the ledger database.
+"""Mirror Spotify playlists and their tracks into the Hearth database.
 
-    ./ledger_app/.venv/bin/python spotify_sync.py --auth      # once, opens a browser
-    ./ledger_app/.venv/bin/python spotify_sync.py --whoami
-    ./ledger_app/.venv/bin/python spotify_sync.py --sync      # dry run
-    ./ledger_app/.venv/bin/python spotify_sync.py --sync --apply
+    ./hearth/.venv/bin/python spotify_sync.py --auth      # once, opens a browser
+    ./hearth/.venv/bin/python spotify_sync.py --whoami
+    ./hearth/.venv/bin/python spotify_sync.py --sync      # dry run
+    ./hearth/.venv/bin/python spotify_sync.py --sync --apply
 
 Authorization Code flow. The refresh token goes into `.env`; development-mode
 apps expire it after 180 days, so `--auth` has to be re-run about twice a year.
@@ -31,8 +31,8 @@ import webbrowser
 from datetime import datetime
 
 from sqlmodel import Session, create_engine, delete, select   # noqa: E402
-from ledger_app.core.models import Playlist, PlaylistTrack, Track  # noqa: E402
-from ledger_app.core.paths import atomic_write_text, db_path, secrets_dir  # noqa: E402
+from hearth.core.models import Playlist, PlaylistTrack, Track  # noqa: E402
+from hearth.core.paths import atomic_write_text, db_path, secrets_dir  # noqa: E402
 
 HERE = pathlib.Path(__file__).resolve().parents[2]
 ENV = HERE / ".env"

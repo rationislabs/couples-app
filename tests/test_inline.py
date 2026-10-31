@@ -1,6 +1,6 @@
 """Checks for core/inline.py — rating and notes, in place, on every table.
 
-    ledger_app/.venv/bin/python tests/test_inline.py
+    hearth/.venv/bin/python tests/test_inline.py
 
 One save path serves ten tables, so a regression here is a regression
 everywhere. Rows are created with a zz-inline- prefix and deleted by id in a
@@ -11,12 +11,12 @@ import sys
 
 from sqlmodel import Session, select
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.core import inline as IN
-from ledger_app.core.models import Game, Shop, Title, WatchState
-from ledger_app.core.state import ENGINE, LedgerState
+from hearth.core import inline as IN
+from hearth.core.models import Game, Shop, Title, WatchState
+from hearth.core.state import ENGINE, HearthState
 
 made: list = []
 
@@ -76,7 +76,7 @@ def test_bump_episode_writes_once_and_does_not_raise():
     AttributeError on every click since the first commit, raised after the
     write, so each click added an episode and then showed an error."""
     tid = make(Title, name="zz-inline-title", medium="tv")
-    st = LedgerState(_reflex_internal_init=True)
+    st = HearthState(_reflex_internal_init=True)
     st.bump_episode("zz-inline-title")
     st.bump_episode("zz-inline-title")
     with Session(ENGINE) as s:

@@ -1,17 +1,17 @@
 """Checks for pages/music.py preview/apply: Apply appends exactly what the
 preview showed.
 
-    ledger_app/.venv/bin/python tests/test_music_push.py
+    hearth/.venv/bin/python tests/test_music_push.py
 
 Apply read the count field again, so changing it after the preview appended a
 number of tracks nobody had looked at.
 """
 import asyncio
 
-import _db  # noqa: F401  (first: never the real ledger.db)
+import _db  # noqa: F401  (first: never the real hearth.db)
 
-from ledger_app.core import sync_io  # noqa: E402
-from ledger_app.pages import music as M  # noqa: E402
+from hearth.core import sync_io  # noqa: E402
+from hearth.pages import music as M  # noqa: E402
 
 calls = []
 

@@ -129,7 +129,7 @@ def navbar(active: str) -> rx.Component:
 
     What was here before was an hstack of styled text with the whole
     appearance inline, which is why no page theme and no spike could reach it.
-    Everything static is now in `.nav` in ledger.css; the only inline value
+    Everything static is now in `.nav` in hearth.css; the only inline value
     left is the room's signature hue on the active tab, which varies per page
     and has to beat the stylesheet.
 
@@ -161,7 +161,7 @@ def navbar(active: str) -> rx.Component:
                         + (" on" if href == active else "")),
         )
 
-    here = next((label for label, href in TABS if href == active), "Ledger")
+    here = next((label for label, href in TABS if href == active), "Hearth")
     phone = ["block", "block", "block", "none", "none"]
     return rx.hstack(
         rx.link(
@@ -169,7 +169,7 @@ def navbar(active: str) -> rx.Component:
                 rx.box(class_name="nav-mark"),
                 # On a phone the bar names the page, since the tabs are folded away.
                 rx.text(here, class_name="nav-brand", display=phone),
-                rx.text("Ledger", class_name="nav-brand",
+                rx.text("Hearth", class_name="nav-brand",
                         display=["none", "none", "none", "block", "block"]),
                 spacing="2", align="center",
             ),
@@ -186,7 +186,7 @@ def navbar(active: str) -> rx.Component:
                 class_name="nav-settings"),
         rx.cond(ProfileState.backup_warning != "",
                 # The text is ~90px a phone bar does not have, so there only the
-                # icon shows (ledger.css); the label keeps the words for both.
+                # icon shows (hearth.css); the label keeps the words for both.
                 rx.link(rx.icon("triangle-alert", size=18),
                         rx.text(ProfileState.backup_warning, as_="span"),
                         href="/settings", size="1", aria_label=ProfileState.backup_warning,
@@ -389,7 +389,7 @@ def data_table(columns: list[str], rows: rx.Var, row_fn,
 # never broken by being forgotten here.
 ROOMS = {
     "/": "lobby",
-    "/library": "ledger", "/books": "ledger", "/music": "ledger",
+    "/library": "media", "/books": "media", "/music": "media",
     "/dates": "field",
     "/convo": "private",
     "/recipes": "household", "/recipes/[slug]": "household",

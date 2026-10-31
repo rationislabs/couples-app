@@ -10,10 +10,10 @@ every other one at h2-h6.
 import reflex as rx
 from reflex.components.radix.themes.typography.heading import Heading
 
-import _db  # noqa: F401  (first: never the real ledger.db)
+import _db  # noqa: F401  (first: never the real hearth.db)
 
-from ledger_app import ledger_app as L                        # noqa: E402
-from ledger_app.pages import (books, convo, dates, home, household,  # noqa: E402
+from hearth import hearth as L                        # noqa: E402
+from hearth.pages import (books, convo, dates, home, household,  # noqa: E402
                               music, recipes, setup)
 
 PAGES = {"/library": L.index, "/books": books.page, "/convo": convo.page,

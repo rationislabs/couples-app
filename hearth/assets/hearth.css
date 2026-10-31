@@ -1,4 +1,4 @@
-/* Ledger — visual system.
+/* Hearth — visual system.
    Palette recovered from the retired static ledger (backups/static-ledger-*):
    navy ink, bone text, and three accents that carry data rather than decorate. */
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@600;700&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,400&display=swap');
@@ -235,10 +235,10 @@ button.rt-Button:where(.rt-variant-solid) { color: var(--ink); }
    widths the browser starved the description to 4rem and broke words in half;
    with table-layout:auto the max-widths were ignored altogether. Percentages of
    a fixed layout are the only version that holds. Order follows COLUMNS in
-   ledger_app.py. */
+   hearth.py. */
 .lib-table table { table-layout: fixed; width: 100%; }
 /* Column widths are a Reflex prop on each header cell now (COLUMNS in
-   ledger_app.py): auto below 62em, fixed above. They were ten nth-child
+   hearth.py): auto below 62em, fixed above. They were ten nth-child
    rules here that had to be renumbered whenever a column was added. */
 .lib-table td { overflow-wrap: break-word; }
 /* the description, clamped to three lines — a class, not td:nth-child(10) */
@@ -362,7 +362,7 @@ button.rt-Button:where(.rt-variant-solid) { color: var(--ink); }
 
 /* ===========================================================================
    Phone and tablet.
-   The ledger was drawn for a desk, but the device that actually opens it is a
+   Hearth was drawn for a desk, but the device that actually opens it is a
    small phone (375px). These three blocks are the whole responsive layer:
    nothing here changes the desktop view. Breakpoints match Radix (sm 768,
    md 1024) so this file and the columns={"initial","sm","lg"} props in
@@ -492,7 +492,7 @@ button.rt-Button:where(.rt-variant-solid) { color: var(--ink); }
 /* Room: voice and density. Radix sizes are calc()s over --scaling, so setting
    it on a subtree rescales the components inside it. */
 .room-lobby     { --signature: var(--mustard); --title-face: 'Newsreader';     --scaling: 1.05; }
-.room-ledger    { --signature: #A1C653;        --title-face: 'Archivo Narrow'; --scaling: 0.95; }
+.room-media     { --signature: #A1C653;        --title-face: 'Archivo Narrow'; --scaling: 0.95; }
 .room-field     { --signature: #538AC6;        --title-face: 'Archivo Narrow'; --scaling: 1;    }
 .room-private   { --signature: #C653BE;        --title-face: 'Newsreader';     --scaling: 1.05; }
 .room-household { --signature: var(--mustard); --title-face: 'Archivo';        --scaling: 1;    }

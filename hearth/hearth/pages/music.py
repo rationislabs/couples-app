@@ -198,8 +198,8 @@ class MusicState(rx.State):
         """
         if not self._built:
             return ""
-        name = (self.build_name or "Ledger mix").replace('"', "")
-        return f'./ledger_app/.venv/bin/python spotify_push.py --new "{name}" --apply'
+        name = (self.build_name or "Hearth mix").replace('"', "")
+        return f'./hearth/.venv/bin/python spotify_push.py --new "{name}" --apply'
 
     @rx.event
     def toggle_build_vibe(self, vibe: str):

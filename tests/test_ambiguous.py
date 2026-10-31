@@ -1,6 +1,6 @@
 """Checks for the TMDB pick queue (tmdb-ambiguous.json): no pick undoes another.
 
-    ledger_app/.venv/bin/python tests/test_ambiguous.py
+    hearth/.venv/bin/python tests/test_ambiguous.py
 
 Each browser tab held its own copy of the queue and wrote it back whole, so a
 pick in one tab (or a tmdb_fill.py run in between) brought back entries the
@@ -9,12 +9,12 @@ other had already dropped.
 import json
 import os
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 
 _db.migrate()
 
-from ledger_app.core import sync_io  # noqa: E402
-from ledger_app.core.state import LedgerState  # noqa: E402
+from hearth.core import sync_io  # noqa: E402
+from hearth.core.state import HearthState  # noqa: E402
 
 F = sync_io.DATA / "tmdb-ambiguous.json"
 
@@ -24,8 +24,8 @@ def entry():
 
 
 def tab():
-    st = LedgerState(_reflex_internal_init=True)
-    LedgerState.load_ambiguous.fn(st)
+    st = HearthState(_reflex_internal_init=True)
+    HearthState.load_ambiguous.fn(st)
     return st
 
 

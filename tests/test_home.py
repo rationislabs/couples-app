@@ -13,18 +13,18 @@ _db.migrate()
 
 from sqlmodel import Session, select                              # noqa: E402
 
-from ledger_app.pages.home import MOOD_TYPES, HomeState        # noqa: E402
-from ledger_app.core import household as H                      # noqa: E402
-from ledger_app.core.models import (ConvoQuestion, CookLog, DateEntry,  # noqa: E402
+from hearth.pages.home import MOOD_TYPES, HomeState        # noqa: E402
+from hearth.core import household as H                      # noqa: E402
+from hearth.core.models import (ConvoQuestion, CookLog, DateEntry,  # noqa: E402
                                Place, WatchState)
-from ledger_app.core.state import ENGINE                                # noqa: E402
+from hearth.core.state import ENGINE                                # noqa: E402
 
 
 def seed() -> list[tuple[type, int]]:
     """Places in two cities, one with no coordinates, and two tops so the
     outfit has something to change between. Enough for every check on an empty
     database. Returns (model, id) pairs, for cleanup by id."""
-    from ledger_app.core.models import Garment
+    from hearth.core.models import Garment
     H.set_home((48.2082, 16.3738))   # the radius checks need somewhere to measure from
     lat, lon = H.home()
     rows = [Place(name="zz-home-test near", city="zz-city-a", tags="restaurant",
@@ -188,7 +188,7 @@ def test_cook_verb_logs_once():
 
 
 def test_play_verb_increments_the_game():
-    from ledger_app.core.models import Game
+    from hearth.core.models import Game
     st = fresh()
     g = dict(st._game)
     if not g:
@@ -213,7 +213,7 @@ def test_play_verb_increments_the_game():
 # them. These assert the filter is honest about what it does not know.
 
 def _home():
-    from ledger_app.pages.home import HomeState
+    from hearth.pages.home import HomeState
     st = HomeState(_reflex_internal_init=True)
     st.load()
     return st
@@ -226,8 +226,8 @@ def test_a_radius_excludes_places_with_no_coordinates():
     so "within 15 km" was offering other countries. A radius now means a
     radius; with no radius set, unknowns still deal.
     """
-    from ledger_app.core.models import Place
-    from ledger_app.core.state import ENGINE
+    from hearth.core.models import Place
+    from hearth.core.state import ENGINE
     from sqlmodel import Session, select
     with Session(ENGINE) as s:
         unplaced = [p for p in s.exec(select(Place)).all()
@@ -271,7 +271,7 @@ def test_an_unplaced_place_says_so_rather_than_showing_blank():
 
 
 def test_radius_label_is_always_one_of_the_options():
-    from ledger_app.pages.home import RADII
+    from hearth.pages.home import RADII
     st = _home()
     for label in RADII:
         st.set_radius(label)
@@ -299,8 +299,8 @@ def test_an_outfit_is_one_garment_per_slot_at_most():
 
 def test_the_outfit_respects_the_season():
     import datetime as _dt
-    from ledger_app.core.models import Garment
-    from ledger_app.core.state import ENGINE
+    from hearth.core.models import Garment
+    from hearth.core.state import ENGINE
     from sqlmodel import Session, select
     season = "warm" if 4 <= _dt.date.today().month <= 9 else "cold"
     with Session(ENGINE) as s:
@@ -339,7 +339,7 @@ def test_acting_on_one_card_keeps_the_others():
 
 
 def test_a_vetoed_place_is_never_dealt_and_a_shared_yes_is_favoured():
-    from ledger_app.core import verdicts as V
+    from hearth.core import verdicts as V
     near, far = _place_id("zz-home-test near"), _place_id("zz-home-test far")
     V.write("place", near, "1", V.DOWN)
     V.write("place", far, "1", V.UP)

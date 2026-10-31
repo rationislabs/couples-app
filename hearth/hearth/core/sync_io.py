@@ -10,7 +10,7 @@ import pathlib
 import subprocess
 
 # core/ sits one level deeper than the package root, so this is
-# ledger_app/ (where ledger.db lives), not the package directory.
+# hearth/ (where hearth.db lives), not the package directory.
 from .paths import APP, ROOT, json_dir
 
 DATA = json_dir()                 # API caches, nothing executable

@@ -2,10 +2,10 @@
 # Tailscale. compose.yml, the file users run, publishes nothing.
 services:
   app:
-    image: ${IMAGE:-couples-app:test}
+    image: ${IMAGE:-hearth:test}
     environment:
-      LEDGER_BIND_HOST: 0.0.0.0
-      LEDGER_ALLOWED_HOST: couples.example.ts.net
+      HEARTH_BIND_HOST: 0.0.0.0
+      HEARTH_ALLOWED_HOST: hearth.example.ts.net
     # Runs as uid 10001 and never needs root powers: drop them all.
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]

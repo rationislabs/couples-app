@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pre-deployment check. Run before exposing the app to anyone else.
 
-    ./ledger_app/.venv/bin/python preflight.py
+    ./hearth/.venv/bin/python preflight.py
 
 Every check answers a question that has a wrong answer you would not notice
 until it mattered: are the secrets readable by other accounts, is the database
@@ -20,8 +20,8 @@ import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-APP = ROOT / "ledger_app"
-DB = APP / "ledger.db"
+APP = ROOT / "hearth"
+DB = APP / "hearth.db"
 ENV = ROOT / ".env"
 
 FAIL: list[str] = []
@@ -121,18 +121,18 @@ def check_database() -> None:
 
 
 def check_backups() -> None:
-    dest = pathlib.Path(os.environ.get("LEDGER_BACKUP_DIR", ROOT / "backups"))
-    found = sorted(dest.glob("ledger-*.db.gz"), reverse=True)
+    dest = pathlib.Path(os.environ.get("HEARTH_BACKUP_DIR", ROOT / "backups"))
+    found = sorted(dest.glob("hearth-*.db.gz"), reverse=True)
     if not found:
         bad(f"no backups in {dest}. Run ./backup_db.sh")
         return
     ok(f"{len(found)} backups, newest {found[0].name}")
     timer = subprocess.run(["systemctl", "--user", "is-enabled",
-                            "ledger-backup.timer"], capture_output=True,
+                            "hearth-backup.timer"], capture_output=True,
                            text=True)
     if timer.stdout.strip() != "enabled":
-        warn("ledger-backup.timer is not enabled — backups will not run "
-             "nightly. Run: systemctl --user enable --now ledger-backup.timer")
+        warn("hearth-backup.timer is not enabled — backups will not run "
+             "nightly. Run: systemctl --user enable --now hearth-backup.timer")
     else:
         ok("nightly backup timer enabled")
 

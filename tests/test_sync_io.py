@@ -1,7 +1,7 @@
 """Checks for core/sync_io.py — the scripts the pages start must not freeze
 the app while they run.
 
-    ledger_app/.venv/bin/python tests/test_sync_io.py
+    hearth/.venv/bin/python tests/test_sync_io.py
 
 The app runs one backend worker: a blocking subprocess.run inside an event
 handler stalls every other page and websocket until the script ends.
@@ -11,9 +11,9 @@ import pathlib
 import sys
 import time
 
-import _db  # noqa: F401  (first: never the real ledger.db)
+import _db  # noqa: F401  (first: never the real hearth.db)
 
-from ledger_app.core import sync_io  # noqa: E402
+from hearth.core import sync_io  # noqa: E402
 
 CWD = pathlib.Path(__file__).parent
 

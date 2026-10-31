@@ -9,12 +9,12 @@ import sys
 
 from sqlmodel import Session, select                     # noqa: E402
 
-import _db  # first: never the real ledger.db
+import _db  # first: never the real hearth.db
 _db.migrate()
 
-from ledger_app.core.models import Shop                       # noqa: E402
-from ledger_app.pages.shops import ShopState                   # noqa: E402
-from ledger_app.core.state import ENGINE                      # noqa: E402
+from hearth.core.models import Shop                       # noqa: E402
+from hearth.pages.shops import ShopState                   # noqa: E402
+from hearth.core.state import ENGINE                      # noqa: E402
 
 MADE: list[int] = []
 
@@ -134,7 +134,7 @@ def test_remove_is_a_tombstone():
 def test_never_ordered_filter_selects_only_unordered_shops():
     """update shopping table to include ones not ordered
     from yet to distinguish". An empty Orders cell read as missing data."""
-    from ledger_app.pages.shops import ShopState
+    from hearth.pages.shops import ShopState
     st = ShopState(_reflex_internal_init=True)
     st.load()
     st.unordered_only = True

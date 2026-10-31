@@ -1,5 +1,5 @@
 
-reflex[db]==0.10.0
+reflex[db]==0.10.1
 # 0.0.47 rejects naive datetimes, which every model here stores
 sqlmodel==0.0.42
 
